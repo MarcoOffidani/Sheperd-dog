@@ -64,6 +64,10 @@ class Status(UserEnum):
     VISCEK = auto()
     "Pedestrian under Viscek rules."
 
+    FALLEN = auto()
+
+    FRIGHTENED = auto()
+
     FOLLOWER = auto()
     "Follower of the leader particle (agent)."
 
@@ -79,6 +83,7 @@ class SwitchDistances:
     to_exit: float       = constants.SWITCH_DISTANCE_TO_EXIT
     to_escape: float     = constants.SWITCH_DISTANCE_TO_ESCAPE
     to_pedestrian: float = constants.SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN
+    to_fall: float       = constants.SWITCH_DISTANCE_TO_FALL
 
 
 class Exit:
