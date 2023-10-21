@@ -4,7 +4,7 @@
 
 NUM_PEDESTRIANS = 10                        # ! number of pedestrians
 EPS = 1e-8 
-ENSLAVING_DEGREE = 0.1                      # ! leader's enslaving degree
+ENSLAVING_DEGREE = 1                        # ! leader's enslaving degree
 
 # Area params
 WIDTH = 1.0                                 # ! geometry of environment space: width
@@ -31,6 +31,7 @@ SWITCH_DISTANCE_TO_LEADER = 0.2             # radius of catch by leader
 SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.1   # SWITCH_DISTANCE_TO_LEADER
 SWITCH_DISTANCE_TO_EXIT   = 0.4
 SWITCH_DISTANCE_TO_ESCAPE = 0.01
+SWITCH_DISTANCE_TO_FALL = 0.0001
 
 SAVE_PATH_GIFF = 'saved_data/giff'
 SAVE_PATH_PNG  = 'saved_data/png'

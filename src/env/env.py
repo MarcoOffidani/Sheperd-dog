@@ -4,11 +4,12 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 import logging
+
 from src.env.agents import Agent
 from src.env.pedestrians import Pedestrians
 from src.env.rewards import Reward
-
-from src.env.utils import Exit, Status, SwitchDistances, Time; log = logging.getLogger(__name__)
+from src.env.utils import Exit, Status, SwitchDistances, Time
+from src.env.areas import Area
 
 
 import matplotlib.pyplot as plt
@@ -16,11 +17,11 @@ import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 
 from src.env import constants
-from src.env.areas import Area
 from src.params import WALK_DIAGRAM_LOGGING_FREQUENCY
 
 import wandb
 
+log = logging.getLogger(__name__)
 
 def setup_logging(verbose: bool, experiment_name: str) -> None:
     logs_folder = constants.SAVE_PATH_LOGS
@@ -57,6 +58,7 @@ def grad_potential_pedestrians(
         grad = grad.sum(axis = 0)
     else:
         grad = np.zeros(2)
+        
     return grad
 
 

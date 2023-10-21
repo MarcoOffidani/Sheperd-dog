@@ -67,6 +67,8 @@ class Area:
 
     def pedestrians_step(self, pedestrians : Pedestrians, agent : Agent, now : int) -> Tuple[Pedestrians, bool, float, float]:
 
+        # print(np.any(pedestrians.statuses == Status.FALLEN))
+
         # Check evacuated pedestrians & record new directions and positions of escaped pedestrians
         escaped = pedestrians.statuses == Status.ESCAPED
         self.escaped_directions_update(pedestrians, escaped)
@@ -94,16 +96,25 @@ class Area:
 
         fv_directions = self.estimate_mean_direction_among_neighbours(
             intersection, efv_directions
-        )            
+        )     
 
         # Record new directions of following and viscek pedestrians
         pedestrians.directions[fv] = fv_directions.T * self.step_size
         
         # Add enslaving factor of leader's direction to following particles
         f_directions = pedestrians.directions[following]
-        l_directions = agent.direction
+        f_positions = pedestrians.positions[following]
+        # l_directions = agent.direction
+        l_directions = agent.position.reshape(1, -1) - f_positions
+        l_directions /=  np.linalg.norm(l_directions, axis=1, keepdims=True) / self.step_size
         f_directions = agent.enslaving_degree * l_directions + (1. - agent.enslaving_degree) * f_directions
         pedestrians.directions[following] = f_directions
+        
+        # to_fall = np.where(dm < SwitchDistances.to_fall, 1, 0).any(axis=0)
+        # to_fall = np.flatnonzero(efv)[to_fall]
+        # pedestrians.directions[to_fall] *= 0
+        # pedestrians.statuses[to_fall] = Status.FALLEN
+        # # print(np.any(pedestrians.statuses == Status.FALLEN))
         
         # Record new positions of exiting, following and viscek pedestrians
         pedestrians.positions[efv] += pedestrians.directions[efv] 
@@ -172,4 +183,3 @@ class Area:
         if left or right or down or up:
             return True
         return False
-

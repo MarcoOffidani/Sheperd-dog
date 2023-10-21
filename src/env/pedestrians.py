@@ -10,6 +10,7 @@ class Pedestrians:
     
     positions : np.ndarray                      # [num x 2], r_x and r_y
     directions : np.ndarray                     # [num x 2], v_x and v_y
+    accelerations: np.ndarray                   # [num x 2], a_x and a_y
     statuses : np.ndarray                       # [num], status : Status 
     memory : Dict[str, List[np.ndarray]]        # needed for animation drawing (positions and statuses)
 
@@ -19,6 +20,7 @@ class Pedestrians:
     def reset(self, agent_position, exit_position):
         self.positions  = np.random.uniform(-1.0, 1.0, size=(self.num, 2))
         self.directions = np.random.uniform(-1.0, 1.0, size=(self.num, 2))
+        self.accelerations = np.zeros_like(self.positions)
         self.normirate_directions()
         self.statuses = np.array([Status.VISCEK for _ in range(self.num)])
         self.statuses = update_statuses(
