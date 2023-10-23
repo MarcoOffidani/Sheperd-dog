@@ -24,7 +24,8 @@ N_EPISODES = 0                              # ! number of episodes already done 
 N_TIMESTEPS = 0                             # ! number of timesteps already done (for pretrained models)
 
 # Gravity embedding params
-ENABLED_GRAVITY_EMBEDDING = True            # ! if True use gravity embedding
+ENABLED_GRAVITY_EMBEDDING = False            # ! if True use gravity embedding
+ENABLED_GRAVITY_AND_SPEED_EMBEDDING = True   # ! if True use gravity and speed embedding
 ALPHA = 3                                   # ! parameter of gradient state
 
 SWITCH_DISTANCE_TO_LEADER = 0.2             # radius of catch by leader

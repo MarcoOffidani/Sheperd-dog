@@ -91,6 +91,26 @@ def grad_potential_exit(
     return grad
 
 
+def grad_time_derivative_exit(
+        agent: Agent, pedestrians: Pedestrians, exit: Exit, alpha: float = constants.ALPHA
+    ) -> np.ndarray:
+
+    R = agent.position - exit.position
+
+    V = agent.direction
+    
+    N = sum(pedestrians.statuses == Status.FOLLOWER)
+
+    if N != 0:
+        norm = np.linalg.norm(R) + constants.EPS
+        grad = alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.dot(V, R) * R)
+        grad *= N
+    else:
+        grad = np.zeros(2)
+        
+    return grad
+
+
 class EvacuationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
@@ -124,6 +144,7 @@ class EvacuationEnv(gym.Env):
         
         # gravity embedding params
         enabled_gravity_embedding=constants.ENABLED_GRAVITY_EMBEDDING,
+        enabled_gravity_and_speed_embedding = constants.ENABLED_GRAVITY_AND_SPEED_EMBEDDING,
         alpha=constants.ALPHA,
         
         # logging params
@@ -159,6 +180,7 @@ class EvacuationEnv(gym.Env):
         self.episode_intrinsic_reward = 0
         self.episode_status_reward = 0        
         self.enabled_gravity_embedding = enabled_gravity_embedding
+        self.enabled_gravity_and_speed_embedding = enabled_gravity_and_speed_embedding
         self.alpha = alpha
 
         self.action_space = spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
@@ -179,12 +201,20 @@ class EvacuationEnv(gym.Env):
             'agent_position' : spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
         }
         
-        if self.enabled_gravity_embedding:
+        if self.enabled_gravity_and_speed_embedding:
+            observation_space['grad_potential_pedestrians'] = \
+                spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
+            observation_space['grad_potential_exit'] = \
+                spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)  
+            observation_space['grad_time_derivative_exit'] = \
+                spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
+            observation_space['grad_time_derivative_pedestrians'] = \
+                spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)   
+        elif self.enabled_gravity_embedding:
             observation_space['grad_potential_pedestrians'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
             observation_space['grad_potential_exit'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
-    
         else:
             observation_space['pedestrians_positions'] = \
                 spaces.Box(low=-1, high=1, shape=(self.pedestrians.num, 2), dtype=np.float32)
@@ -196,8 +226,31 @@ class EvacuationEnv(gym.Env):
     def _get_observation(self):
         observation = {}
         observation['agent_position'] = self.agent.position
-        
+
         if self.enabled_gravity_embedding:
+            observation['grad_potential_pedestrians'] = grad_potential_pedestrians(
+                agent=self.agent, 
+                pedestrians=self.pedestrians, 
+                alpha=self.alpha
+            )
+            observation['grad_potential_exit'] = grad_potential_exit(
+                agent=self.agent,
+                pedestrians=self.pedestrians,
+                exit=self.area.exit,
+                alpha=self.alpha
+            )
+            observation['grad_time_derivative_exit'] = grad_time_derivative_exit(
+                agent=self.agent,
+                pedestrians=self.pedestrians,
+                exit=self.area.exit,
+                alpha=self.alpha
+            )
+            observation['grad_time_derivative_pedestrians'] = grad_time_derivative_pedestrians(
+                agent=self.agent,
+                pedestrians=self.pedestrians,
+                alpha=self.alpha
+            )
+        elif self.enabled_gravity_embedding:
             observation['grad_potential_pedestrians'] = grad_potential_pedestrians(
                 agent=self.agent, 
                 pedestrians=self.pedestrians, 
