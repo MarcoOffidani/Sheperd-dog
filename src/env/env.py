@@ -73,7 +73,7 @@ def grad_time_derivative_pedestrians(
 
     if len(R) != 0:
         norm = np.linalg.norm(R, axis = 1)[:, np.newaxis] + constants.EPS
-        grad = alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * R, axis=1) * R)
+        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * R, axis=1) * R)
         grad = grad.sum(axis=0)
     else:
         grad = np.zeros(2)
@@ -103,7 +103,7 @@ def grad_time_derivative_exit(
 
     if N != 0:
         norm = np.linalg.norm(R) + constants.EPS
-        grad = alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.dot(V, R) * R)
+        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.dot(V, R) * R)
         grad *= N
     else:
         grad = np.zeros(2)
