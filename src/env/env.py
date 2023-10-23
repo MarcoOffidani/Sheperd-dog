@@ -61,6 +61,25 @@ def grad_potential_pedestrians(
         
     return grad
 
+def grad_time_derivative(
+        agent: Agent, pedestrians: Pedestrians, alpha: float = constants.ALPHA
+    ) -> np.ndarray:
+
+    R = agent.position[np.newaxis, :] - pedestrians.positions
+    R = R[pedestrians.statuses == Status.VISCEK]
+
+    V = agent.direction[np.newaxis, :] - pedestrians.positions
+    V = V[pedestrians.statuses == Status.VISCEK]
+
+    if len(R) != 0:
+        norm = np.linalg.norm(R, axis = 1)[:, np.newaxis] + constants.EPS
+        grad = alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * R, axis=1) * R)
+        grad = grad.sum(axis=0)
+    else:
+        grad = np.zeros(2)
+        
+    return grad
+
 
 def grad_potential_exit(
         agent: Agent, pedestrians: Pedestrians, exit: Exit, alpha: float = constants.ALPHA
