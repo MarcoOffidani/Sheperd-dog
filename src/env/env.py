@@ -61,7 +61,7 @@ def grad_potential_pedestrians(
         
     return grad
 
-def grad_time_derivative(
+def grad_time_derivative_pedestrians(
         agent: Agent, pedestrians: Pedestrians, alpha: float = constants.ALPHA
     ) -> np.ndarray:
 
