@@ -211,7 +211,6 @@ class EvacuationEnv(gym.Env):
             observation_space['grad_time_derivative_pedestrians'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)   
         elif self.enabled_gravity_embedding:
-            raise Exception
             observation_space['grad_potential_pedestrians'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
             observation_space['grad_potential_exit'] = \
@@ -252,7 +251,6 @@ class EvacuationEnv(gym.Env):
                 alpha=self.alpha
             )
         elif self.enabled_gravity_embedding:
-            raise Exception
             observation['grad_potential_pedestrians'] = grad_potential_pedestrians(
                 agent=self.agent, 
                 pedestrians=self.pedestrians, 
