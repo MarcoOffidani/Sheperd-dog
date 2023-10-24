@@ -73,7 +73,7 @@ def grad_time_derivative_pedestrians(
 
     if len(R) != 0:
         norm = np.linalg.norm(R, axis = 1)[:, np.newaxis] + constants.EPS
-        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * R, axis=1) * R)
+        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * R, axis=1, keepdims=True) * R)
         grad = grad.sum(axis=0)
     else:
         grad = np.zeros(2)
@@ -211,6 +211,7 @@ class EvacuationEnv(gym.Env):
             observation_space['grad_time_derivative_pedestrians'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)   
         elif self.enabled_gravity_embedding:
+            raise Exception
             observation_space['grad_potential_pedestrians'] = \
                 spaces.Box(low=-1, high=1, shape=(2, ), dtype=np.float32)
             observation_space['grad_potential_exit'] = \
@@ -227,7 +228,7 @@ class EvacuationEnv(gym.Env):
         observation = {}
         observation['agent_position'] = self.agent.position
 
-        if self.enabled_gravity_embedding:
+        if self.enabled_gravity_and_speed_embedding:
             observation['grad_potential_pedestrians'] = grad_potential_pedestrians(
                 agent=self.agent, 
                 pedestrians=self.pedestrians, 
@@ -251,6 +252,7 @@ class EvacuationEnv(gym.Env):
                 alpha=self.alpha
             )
         elif self.enabled_gravity_embedding:
+            raise Exception
             observation['grad_potential_pedestrians'] = grad_potential_pedestrians(
                 agent=self.agent, 
                 pedestrians=self.pedestrians, 

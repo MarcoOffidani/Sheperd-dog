@@ -4,7 +4,7 @@
 
 NUM_PEDESTRIANS = 10                        # ! number of pedestrians
 EPS = 1e-8 
-ENSLAVING_DEGREE = 1                        # ! leader's enslaving degree
+ENSLAVING_DEGREE = 0.1                        # ! leader's enslaving degree
 
 # Area params
 WIDTH = 1.0                                 # ! geometry of environment space: width

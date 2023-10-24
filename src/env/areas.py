@@ -104,9 +104,9 @@ class Area:
         # Add enslaving factor of leader's direction to following particles
         f_directions = pedestrians.directions[following]
         f_positions = pedestrians.positions[following]
-        # l_directions = agent.direction
-        l_directions = agent.position.reshape(1, -1) - f_positions
-        l_directions /=  np.linalg.norm(l_directions, axis=1, keepdims=True) / self.step_size
+        l_directions = agent.direction
+        # l_directions = agent.position.reshape(1, -1) - f_positions
+        # l_directions /=  np.linalg.norm(l_directions, axis=1, keepdims=True) / self.step_size
         f_directions = agent.enslaving_degree * l_directions + (1. - agent.enslaving_degree) * f_directions
         pedestrians.directions[following] = f_directions
         
