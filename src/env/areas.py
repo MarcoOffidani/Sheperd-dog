@@ -43,10 +43,11 @@ class Area:
         # Estimate the contibution if each neighbouring particle 
         fv_directions_x = (intersection * efv_directions[:, 0]).sum(axis=1) / n_intersections
         fv_directions_y = (intersection * efv_directions[:, 1]).sum(axis=1) / n_intersections
-        fv_theta = np.arctan2(fv_directions_x, fv_directions_y)
+        fv_theta = np.arctan2(fv_directions_y, fv_directions_x)
                                 
         # Create randomization noise to obtained directions
-        noise = np.random.normal(loc=0., scale=constants.NOISE_COEF, size=len(n_intersections))
+        noise = np.random.uniform(low=-constants.NOISE_COEF/2, high=constants.NOISE_COEF/2, size=len(n_intersections))
+        # noise = np.random.normal(loc=0., scale=constants.NOISE_COEF, size=len(n_intersections))
         
         # New direction = estimated_direction + noise
         fv_theta = fv_theta + noise
@@ -117,6 +118,7 @@ class Area:
         # # print(np.any(pedestrians.statuses == Status.FALLEN))
         
         # Record new positions of exiting, following and viscek pedestrians
+        old_pos = pedestrians.positions.copy()
         pedestrians.positions[efv] += pedestrians.directions[efv] 
 
         # Handling of wall collisions
@@ -125,6 +127,16 @@ class Area:
         miss = pedestrians.positions - clipped
         pedestrians.positions -= 2 * miss
         pedestrians.directions *= np.where(miss!=0, -1, 1)
+
+        # median wall bumping
+        to_bump_mask = pedestrians.positions[:, 1] * old_pos[:, 1] < 0
+        to_bump_mask = np.logical_and(to_bump_mask, np.abs(pedestrians.positions[:,0]) > constants.WALL_HOLE_HALF_WIDTH)
+        to_bump_mask = np.logical_and(to_bump_mask, efv)
+
+        if any(to_bump_mask):
+            pedestrians.positions[to_bump_mask] = old_pos[to_bump_mask]
+            pedestrians.directions[to_bump_mask] = -pedestrians.directions[to_bump_mask]
+
 
         # Estimate pedestrians statues, reward & update statuses
         old_statuses = pedestrians.statuses.copy()
@@ -165,6 +177,14 @@ class Area:
         action /= np.linalg.norm(action) + constants.EPS # np.clip(action, -1, 1, out=action)
 
         agent.direction = self.step_size * action
+
+        def median_wall_bump(pos, dir):
+            new_pos = pos + dir
+            if ((new_pos[1] * pos[1]) < 0) and (abs(new_pos[0]) > constants.WALL_HOLE_HALF_WIDTH):
+                return True
+
+        if median_wall_bump(agent.position, agent.direction):
+            return agent, self.reward.is_termination_agent_wall_collision, -5.
         
         if not self._if_wall_collision(agent):
             agent.position += agent.direction
