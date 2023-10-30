@@ -29,6 +29,11 @@ To run experiment:
 python main.py --exp-name "my-first-experiment"
 ```
 
+To replicate project results:
+```
+python main.py --exp-name "Test_project" --learn-timesteps 2000000
+```
+
 ## Documentation
 
 Most valuable parametes can be set throw argparse module. However some parameters are still in files:\
