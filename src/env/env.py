@@ -409,6 +409,10 @@ class EvacuationEnv(gym.Env):
         plt.ylim([ -1.1 * self.area.height, 1.1 * self.area.height])
         plt.xticks([]); plt.yticks([])
 
+        #plot Middle Wall
+        plt.hlines([0], -self.area.width, -constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
+        plt.hlines([0], constants.WALL_HOLE_HALF_WIDTH, self.area.width, linestyle='--', color='grey')
+
         exit_coordinates = (self.area.exit.position[0], self.area.exit.position[1])
         agent_coordinates = (self.agent.memory['position'][0][0], self.agent.memory['position'][0][1])
 
