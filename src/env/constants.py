@@ -34,7 +34,7 @@ SWITCH_DISTANCE_TO_EXIT   = 0.1
 SWITCH_DISTANCE_TO_ESCAPE = 0.01
 SWITCH_DISTANCE_TO_FALL = 0.0001
 
-WALL_HOLE_HALF_WIDTH = 1                    # put 1 in order to remove the wall
+WALL_HOLE_HALF_WIDTH = 0.15                    # put 0.5 in order to remove the wall
 
 SAVE_PATH_GIFF = 'saved_data/giff'
 SAVE_PATH_PNG  = 'saved_data/png'

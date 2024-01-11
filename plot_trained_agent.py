@@ -11,7 +11,7 @@ model = PPO(
             env, verbose=1
         )
 
-model.load("saved_data\models\Our_potential_corrected_n-60_lr-0.0003_gamma-0.99_s-ped_ss-0.01_vr-0.1_27-Oct-19-20-49.zip")
+model.load("saved_data\models\Test_project_n-60_lr-0.0003_gamma-0.99_s-ped_ss-0.01_vr-0.1_28-Dec-18-49-07.zip")
 
 import wandb
 

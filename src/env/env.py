@@ -409,9 +409,29 @@ class EvacuationEnv(gym.Env):
         plt.ylim([ -1.1 * self.area.height, 1.1 * self.area.height])
         plt.xticks([]); plt.yticks([])
 
-        #plot Middle Wall
-        plt.hlines([0], -self.area.width, -constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
-        plt.hlines([0], constants.WALL_HOLE_HALF_WIDTH, self.area.width, linestyle='--', color='grey')
+        #plot Middle Wall HERE$
+        #plt.hlines([0], -self.area.width, -constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
+        #plt.hlines([0], constants.WALL_HOLE_HALF_WIDTH, self.area.width, linestyle='--', color='grey')
+        # Define the positions of the two openings
+        # Define the positions of the openings
+        opening_positions = [-0.5, 0.5]
+
+
+        # Define the width of the wall (assuming self.area.width is available)
+        wall_width = self.area.width
+
+        # Define the half-width of the wall
+        half_wall_width = wall_width 
+
+        # Plot the left segment of the wall
+        plt.hlines([0], -half_wall_width, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='grey')
+
+        # Plot the middle segment of the wall (between the two openings)
+        plt.hlines([0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH, opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='grey')
+
+        # Plot the right segment of the wall
+        plt.hlines([0], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, half_wall_width, linestyle='-', color='grey')
+
 
         exit_coordinates = (self.area.exit.position[0], self.area.exit.position[1])
         agent_coordinates = (self.agent.memory['position'][0][0], self.agent.memory['position'][0][1])
