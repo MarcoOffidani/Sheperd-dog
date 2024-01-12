@@ -21,6 +21,17 @@ def check_horizonthal_bumping(positions, old_pos, num_openings, opening_position
         )
 
     return to_bump_mask
+    
+def check_vertical_bumping(positions, old_pos, num_openings, opening_positions):
+    to_bump_mask = np.logical_and(positions[:, 0] * old_pos[:, 0] < 0, old_pos[:, 1] > constants.VERTICAL_WALL_POSITION )
+
+    for opening_position in opening_positions:
+        to_bump_mask = np.logical_and(
+            to_bump_mask,
+            np.abs(positions[:, 1] - opening_position) > constants.VERTICAL_WALL_HALF_WIDTH
+        )
+
+    return to_bump_mask
 class Area:
     def __init__(self, 
         reward: Reward,
@@ -141,7 +152,7 @@ class Area:
         # Define the positions of the two openings
         opening_positions = [-0.5, 0.5]
         num_openings=len(opening_positions)
-        to_bump_mask = pedestrians.positions[:, 1] * old_pos[:, 1] < 0
+        to_bump_mask1 = pedestrians.positions[:, 1] * old_pos[:, 1] < 0
         # #to_bump_mask = np.logical_and(to_bump_mask, np.abs(pedestrians.positions[:,0]) > constants.WALL_HOLE_HALF_WIDTH)
         # for opening_position in opening_positions:
             # to_bump_mask = np.logical_and(
@@ -150,13 +161,21 @@ class Area:
             # )
         # to_bump_mask = np.logical_and(to_bump_mask, efv)
         # Calculate the to_bump_mask using check_bumping
-        to_bump_mask = check_horizonthal_bumping(pedestrians.positions, old_pos, len(opening_positions), opening_positions)
+        to_bump1_mask = check_horizonthal_bumping(pedestrians.positions, old_pos, len(opening_positions), opening_positions)
 
-        if any(to_bump_mask):
-            pedestrians.positions[to_bump_mask] = old_pos[to_bump_mask]
-            pedestrians.directions[to_bump_mask, 1] = -pedestrians.directions[to_bump_mask, 1]
+        if any(to_bump1_mask):
+            pedestrians.positions[to_bump1_mask] = old_pos[to_bump1_mask]
+            pedestrians.directions[to_bump1_mask, 1] = -pedestrians.directions[to_bump1_mask, 1]
+        # vertical wall bumping HERE€
+        opening_positions = [ 0.5]
+        num_openings=len(opening_positions)
+        to_bump0_mask = np.logical_and(pedestrians.positions[:, 0] * old_pos[:, 0] < 0, old_pos[:, 1] > 0)
+        to_bump0_mask = check_vertical_bumping(pedestrians.positions, old_pos, len(opening_positions), opening_positions)
 
-
+        if any(to_bump0_mask):
+            pedestrians.positions[to_bump0_mask] = old_pos[to_bump0_mask]
+            pedestrians.directions[to_bump0_mask, 0] = -pedestrians.directions[to_bump0_mask, 0]        
+        
         # Estimate pedestrians statues, reward & update statuses
         old_statuses = pedestrians.statuses.copy()
         new_pedestrians_statuses = update_statuses(
@@ -196,13 +215,17 @@ class Area:
         action /= np.linalg.norm(action) + constants.EPS # np.clip(action, -1, 1, out=action)
 
         agent.direction = self.step_size * action
-        opening_positions = [-0.5, 0.5]
-        num_openings=len(opening_positions)
+        h_opening_positions = [-0.5, 0.5]
+        num_h_openings=len(h_opening_positions)
+        v_opening_positions = [ 0.5]
+        num_v_openings=len(v_opening_positions)
         def agent_median_wall_bump(pos, dir): #HERE€
             new_pos = pos + dir
             #if ((new_pos[1] * pos[1]) < 0) and (abs(new_pos[0]) > constants.WALL_HOLE_HALF_WIDTH):
                 #return True
-            if check_horizonthal_bumping(np.expand_dims(new_pos, axis=0), np.expand_dims(pos, axis=0), num_openings, opening_positions):
+            if check_horizonthal_bumping(np.expand_dims(new_pos, axis=0), np.expand_dims(pos, axis=0), num_h_openings, h_opening_positions):
+                return True
+            if check_vertical_bumping(np.expand_dims(new_pos, axis=0), np.expand_dims(pos, axis=0), num_v_openings, v_opening_positions):
                 return True
         if agent_median_wall_bump(agent.position, agent.direction):
             return agent, self.reward.is_termination_agent_wall_collision, -5.

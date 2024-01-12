@@ -409,7 +409,7 @@ class EvacuationEnv(gym.Env):
         plt.ylim([ -1.1 * self.area.height, 1.1 * self.area.height])
         plt.xticks([]); plt.yticks([])
 
-        #plot Middle Wall HERE$
+        #plot Middle Wall HERE€
         #plt.hlines([0], -self.area.width, -constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
         #plt.hlines([0], constants.WALL_HOLE_HALF_WIDTH, self.area.width, linestyle='--', color='grey')
         # Define the positions of the two openings
@@ -431,6 +431,15 @@ class EvacuationEnv(gym.Env):
 
         # Plot the right segment of the wall
         plt.hlines([0], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, half_wall_width, linestyle='-', color='grey')
+        # Plot the vertical wall with an opening in the middle
+        # Plot the first vertical wall segment (top)
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 1.0, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH, linestyle='-', color='grey')
+
+        # Plot the second vertical wall segment (bottom)
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 0.0, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH, linestyle='-', color='grey')
+
+
+
 
 
         exit_coordinates = (self.area.exit.position[0], self.area.exit.position[1])

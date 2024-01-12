@@ -39,3 +39,6 @@ WALL_HOLE_HALF_WIDTH = 0.15                    # put 0.5 in order to remove the 
 SAVE_PATH_GIFF = 'saved_data/giff'
 SAVE_PATH_PNG  = 'saved_data/png'
 SAVE_PATH_LOGS = 'saved_data/logs'
+
+VERTICAL_WALL_POSITION = 0.0  # Horizontal position of the vertical wall
+VERTICAL_WALL_HALF_WIDTH = 0.15  # Half-width of the vertical wall opening
