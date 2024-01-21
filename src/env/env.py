@@ -183,7 +183,7 @@ class EvacuationEnv(gym.Env):
         self.enabled_gravity_and_speed_embedding = enabled_gravity_and_speed_embedding
         self.alpha = alpha
 
-        self.action_space = spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1., high=1., shape=(5,), dtype=np.float32) #€ add one extra dimension for each door
         self.observation_space = self._get_observation_space()
         
         # logging
@@ -306,7 +306,7 @@ class EvacuationEnv(gym.Env):
 
         # Agent step
         self.agent, terminated_agent, reward_agent = self.area.agent_step(action, self.agent)
-        
+        #self.area.doors = self.agent.doors #€
         # Pedestrians step
         self.pedestrians, terminated_pedestrians, reward_pedestrians, intrinsic_reward = \
             self.area.pedestrians_step(self.pedestrians, self.agent, self.time.now)
@@ -325,7 +325,7 @@ class EvacuationEnv(gym.Env):
         # Draw animation
         if (terminated_agent or terminated_pedestrians or truncated) and self.draw:
             self.save_animation()
-
+        
         # Log reward
         self.episode_reward += reward
         self.episode_intrinsic_reward += intrinsic_reward
@@ -386,7 +386,24 @@ class EvacuationEnv(gym.Env):
             -self.area.width, self.area.width, linestyle='--', color='grey')
         plt.vlines([self.area.width, -self.area.width], 
             -self.area.height, self.area.height, linestyle='--', color='grey')
+        ####
+        print('this is render')
+        #print(scaled_doors)
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 + constants.VERTICAL_WALL_HALF_WIDTH, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2], linestyle='-', color='red')
+        # Plot the bottom side of the vertical door
 
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 - constants.VERTICAL_WALL_HALF_WIDTH, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2], linestyle='-', color='red')
+		
+        # Plot the left side of left door
+        #shit= (0.95 + 1)/2 * constants.WALL_HOLE_HALF_WIDTH   #€ rename this
+
+
+
+        plt.hlines([0],  opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0]  , linestyle='-', color='red')
+        # Plot the right side of left door
+
+        plt.hlines([0],  opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH   , linestyle='-', color='red')
+        ####
         plt.title(f"{self.experiment_name}. Timesteps: {self.time.now}")
 
         plt.tight_layout()
@@ -420,21 +437,38 @@ class EvacuationEnv(gym.Env):
         # Define the width of the wall (assuming self.area.width is available)
         wall_width = self.area.width
 
-        # Define the half-width of the wall
-        half_wall_width = wall_width 
 
         # Plot the left segment of the wall
-        plt.hlines([0], -half_wall_width, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='grey')
+        plt.hlines([0], -wall_width, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='grey')
+        # Plot the left side of left door
+        #shit= (0.95 + 1)/2 * constants.WALL_HOLE_HALF_WIDTH   #€ rename this
+        scaled_doors= (self.agent.memory['doors'][0][0], self.agent.memory['doors'][0][1], self.agent.memory['doors'][0][2]) 
+        
+        print('this is save animation')
+        print(scaled_doors)
+        plt.hlines([0],  opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0]  , linestyle='-', color='red')
+        # Plot the right side of left door
 
+        plt.hlines([0],  opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH   , linestyle='-', color='red')
         # Plot the middle segment of the wall (between the two openings)
         plt.hlines([0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH, opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='grey')
+        # Plot the left side of right door
+ 
+        plt.hlines([0],  opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[1]  , linestyle='-', color='red')
+        # Plot the right side of right door
 
+        plt.hlines([0],  opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[1], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH   , linestyle='-', color='red')
         # Plot the right segment of the wall
-        plt.hlines([0], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, half_wall_width, linestyle='-', color='grey')
+        plt.hlines([0], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, wall_width, linestyle='-', color='grey')
         # Plot the vertical wall with an opening in the middle
         # Plot the first vertical wall segment (top)
         plt.vlines([constants.VERTICAL_WALL_POSITION], 1.0, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH, linestyle='-', color='grey')
+        # Plot the top side of vertical door
+ 
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 + constants.VERTICAL_WALL_HALF_WIDTH, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2], linestyle='-', color='red')
+        # Plot the bottom side of the vertical door
 
+        plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 - constants.VERTICAL_WALL_HALF_WIDTH, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2], linestyle='-', color='red')
         # Plot the second vertical wall segment (bottom)
         plt.vlines([constants.VERTICAL_WALL_POSITION], 0.0, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH, linestyle='-', color='grey')
 
@@ -488,23 +522,150 @@ class EvacuationEnv(gym.Env):
 
         # Draw agent
         agent_position_plot = ax.plot(agent_coordinates[0], agent_coordinates[1], marker='+', color='red')[0]
+        ##draw lines by ChatGDP (tm)
+        # Create empty lists to store the door lines
+        door_lines = []
 
+        # Plot the top side of vertical door
+        top_door_line = plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 + constants.VERTICAL_WALL_HALF_WIDTH, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2], linestyle='-', color='red')
+        door_lines.append(top_door_line)
+
+        # Plot the bottom side of the vertical door
+        bottom_door_line = plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 - constants.VERTICAL_WALL_HALF_WIDTH, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2], linestyle='-', color='red')
+        door_lines.append(bottom_door_line)
+
+        # Plot the left side of left door
+        left_door_line = plt.hlines([0], opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0], linestyle='-', color='red')
+        door_lines.append(left_door_line)
+
+        # Plot the right side of left door
+        right_door_line = plt.hlines([0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='red')
+        door_lines.append(right_door_line)
+
+        # Plot the left side of right door
+        left_door_line2 = plt.hlines([0], opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[1], linestyle='-', color='red')
+        door_lines.append(left_door_line2)
+
+        # Plot the right side of right door
+        right_door_line2 = plt.hlines([0], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[1], opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, linestyle='-', color='red')
+        door_lines.append(right_door_line2)
+        # Initialize the white lines for the complementary areas
+        white_door_lines = []
+
+        # Vertical white door line (for the complementary area of the vertical door)
+        vertical_white_line = plt.vlines([constants.VERTICAL_WALL_POSITION], 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2], 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2], linestyle='-', color='white')
+        white_door_lines.append(vertical_white_line)
+
+        # Horizontal white door lines (for the complementary areas of the horizontal doors)
+        for position in opening_positions:
+            horizontal_white_line = plt.hlines([0], position - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0], position + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], linestyle='-', color='white')
+            white_door_lines.append(horizontal_white_line)
         def update(i):
-
             agent_coordinates = (self.agent.memory['position'][i][0], self.agent.memory['position'][i][1])
             following_zone_plots.set_center(agent_coordinates)
-
+            scaled_doors= (self.agent.memory['doors'][i][0], self.agent.memory['doors'][i][1], self.agent.memory['doors'][i][2]) 
             for status in Status.all():
                 selected_pedestrians = self.pedestrians.memory['statuses'][i] == status
                 pedestrian_position_plots[status].set_xdata(self.pedestrians.memory['positions'][i][selected_pedestrians, 0])
                 pedestrian_position_plots[status].set_ydata(self.pedestrians.memory['positions'][i][selected_pedestrians, 1])
-                 
-            # agent_position_plot.set_xdata(agent_coordinates[0])
-            # agent_position_plot.set_ydata(agent_coordinates[1])
-            agent_position_plot.set_data(agent_coordinates)
 
+            #  agent_position_plot.set_xdata(agent_coordinates[0])
+            #  agent_position_plot.set_ydata(agent_coordinates[1])
+            agent_position_plot.set_data(agent_coordinates)
+            #  Update agent doors
+            for idx, door_line in enumerate(door_lines):
+                door_line.set_data(scaled_doors)
+        def update(i):
+            agent_coordinates = (self.agent.memory['position'][i][0], self.agent.memory['position'][i][1])
+            following_zone_plots.set_center(agent_coordinates)
+            scaled_doors = (self.agent.memory['doors'][i][0], self.agent.memory['doors'][i][1], self.agent.memory['doors'][i][2]) 
+            for status in Status.all():
+                selected_pedestrians = self.pedestrians.memory['statuses'][i] == status
+                pedestrian_position_plots[status].set_xdata(self.pedestrians.memory['positions'][i][selected_pedestrians, 0])
+                pedestrian_position_plots[status].set_ydata(self.pedestrians.memory['positions'][i][selected_pedestrians, 1])
+
+            agent_position_plot.set_data(agent_coordinates[0], agent_coordinates[1])
+
+            # Update vertical door lines
+            door_lines[0].set_segments([[(constants.VERTICAL_WALL_POSITION, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH), 
+                                         (constants.VERTICAL_WALL_POSITION, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2])]])
+            door_lines[1].set_segments([[(constants.VERTICAL_WALL_POSITION, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH), 
+                                         (constants.VERTICAL_WALL_POSITION, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2])]])
+
+            # Update horizontal door lines (left and right)
+            door_lines[2].set_segments([[(opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH, 0), 
+                                         (opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0], 0)]])
+            door_lines[3].set_segments([[(opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], 0), 
+                                         (opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH, 0)]])
+            door_lines[4].set_segments([[(opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH, 0), 
+                                         (opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[1], 0)]])
+            door_lines[5].set_segments([[(opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[1], 0), 
+                                         (opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH, 0)]])
+            # Update the white lines for the complementary areas
+            white_door_lines[0].set_segments([[(constants.VERTICAL_WALL_POSITION, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2]), 
+                                               (constants.VERTICAL_WALL_POSITION, 0.5 - constants.VERTICAL_WALL_HALF_WIDTH + scaled_doors[2])]])
+
+            white_door_lines[1].set_segments([[(opening_positions[0] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[0], 0), 
+                                               (opening_positions[0] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[0], 0)]])
+            white_door_lines[2].set_segments([[(opening_positions[1] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[1], 0), 
+                                               (opening_positions[1] + constants.WALL_HOLE_HALF_WIDTH - scaled_doors[1], 0)]])
+         # def update(i):
+             # agent_coordinates = (self.agent.memory['position'][i][0], self.agent.memory['position'][i][1])
+             # following_zone_plots.set_center(agent_coordinates)
+             # scaled_doors = (self.agent.memory['doors'][i][0], self.agent.memory['doors'][i][1], self.agent.memory['doors'][i][2])
+
+            # #  Update pedestrian positions (assuming pedestrian_position_plots is a dictionary)
+             # for status in Status.all():
+                 # selected_pedestrians = self.pedestrians.memory['statuses'][i] == status
+                 # pedestrian_position_plots[status].set_xdata(self.pedestrians.memory['positions'][i][selected_pedestrians, 0])
+                 # pedestrian_position_plots[status].set_ydata(self.pedestrians.memory['positions'][i][selected_pedestrians, 1])
+
+            # #  Update agent position
+             # agent_position_plot.set_data(agent_coordinates)
+
+            # #  Update agent doors
+             # for idx, door_line in enumerate(door_lines):
+                 # if idx == 0 or idx == 1:
+                     # door_line.set_ydata([0.5 + constants.VERTICAL_WALL_HALF_WIDTH, 0.5 + constants.VERTICAL_WALL_HALF_WIDTH - scaled_doors[2]])
+                 # else:
+                     # door_line.set_xdata([opening_positions[idx - 2] - constants.WALL_HOLE_HALF_WIDTH, opening_positions[idx - 2] - constants.WALL_HOLE_HALF_WIDTH + scaled_doors[idx - 2]])
+        # def update(i):
+            # agent_coordinates = (self.agent.memory['position'][i][0], self.agent.memory['position'][i][1])
+            # following_zone_plots.set_center(agent_coordinates)
+            # scaled_doors = (self.agent.memory['doors'][i][0], self.agent.memory['doors'][i][1], self.agent.memory['doors'][i][2])
+
+            # # Update pedestrian positions (assuming pedestrian_position_plots is a dictionary)
+            # for status in Status.all():
+                # selected_pedestrians = self.pedestrians.memory['statuses'][i] == status
+                # pedestrian_position_plots[status].set_xdata(self.pedestrians.memory['positions'][i][selected_pedestrians, 0])
+                # pedestrian_position_plots[status].set_ydata(self.pedestrians.memory['positions'][i][selected_pedestrians, 1])
+
+            # # Update agent position
+            # agent_position_plot.set_data(agent_coordinates)
+
+            # # Update horizontal door lines
+            # for idx, horizontal_door_line_collection in enumerate(horizontal_door_line_collections):
+                # # Calculate the new positions for left and right door lines
+                # left_door_x = opening_positions[idx] - constants.WALL_HOLE_HALF_WIDTH
+                # right_door_x = left_door_x + scaled_doors[idx]
+
+                # # Update the data for the horizontal door LineCollection
+                # horizontal_door_line_collection.set_segments([[(left_door_x, 0), (right_door_x, 0)]])
+
+            # # Update vertical door lines
+            # for idx, vertical_door_line_collection in enumerate(vertical_door_line_collections):
+                # # Calculate the new positions for top and bottom door lines
+                # top_door_y = 0.5 + constants.VERTICAL_WALL_HALF_WIDTH
+                # bottom_door_y = top_door_y - scaled_doors[idx]
+
+                # # Update the data for the vertical door LineCollection
+                # vertical_door_line_collection.set_segments([[(constants.VERTICAL_WALL_POSITION, top_door_y),
+                                                             # (constants.VERTICAL_WALL_POSITION, bottom_door_y)]])        
+
+
+ 
         ani = animation.FuncAnimation(fig=fig, func=update, frames=self.time.now, interval=20)
-        
+
         if not os.path.exists(constants.SAVE_PATH_GIFF): os.makedirs(constants.SAVE_PATH_GIFF)
         filename = os.path.join(constants.SAVE_PATH_GIFF, f'{self.experiment_name}_ep-{self.time.n_episodes}.gif')
         ani.save(filename=filename, writer='pillow')
