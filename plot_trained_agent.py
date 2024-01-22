@@ -22,7 +22,7 @@ vec_env = model.get_env()
 obs = vec_env.reset()
 for i in range(1000):
     action, _state = model.predict(obs, deterministic=True)
-    action = np.array(( + np.cos(i)/5 ,  + np.sin(i)/5 , 1 - 2*i/1000, 1-2*i/1000, -1+2*i/1000))[None, :]
+    #action = np.array(( + np.cos(i)/5 ,  + np.sin(i)/5 , 1 - 2*i/1000, 1-2*i/1000, -1+2*i/1000))[None, :]
     obs, reward, done, info = vec_env.step(action)
     # vec_env.render("human")
     # VecEnv resets automatically

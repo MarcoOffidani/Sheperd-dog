@@ -92,7 +92,25 @@ class Area:
             pedestrians.directions[exiting] = vec2exit
 
     def pedestrians_step(self, pedestrians : Pedestrians, agent : Agent, now : int) -> Tuple[Pedestrians, bool, float, float]:
+        def check_if_same_room(a, b):
+            #print('a')
+            #print(a)
+            #print('b')
+            #print(b)
 
+            m = len(a)
+            n = len(b)
+            #print('m')
+            #print(m)
+            #print('n')
+            #print(n)
+            mask= np.zeros((m,n)) 
+            for i in range(m):
+                for j in range(n):
+                    mask[i,j]= ( a[i][1]<0 and b[j][1] ) < 0 or ( a[i][1] * b[j][1] <0 and a[i][0] * b[j][0] <0 )
+                
+            return mask
+                    
         # print(np.any(pedestrians.statuses == Status.FALLEN))
 
         # Check evacuated pedestrians & record new directions and positions of escaped pedestrians
@@ -118,8 +136,12 @@ class Area:
         fv = reduce(np.logical_or, (following, viscek))
         dm = distance_matrix(pedestrians.positions[fv],
                              pedestrians.positions[efv], 2)
-        intersection = np.where(dm < SwitchDistances.to_pedestrian, 1, 0) 
+        sr = check_if_same_room(pedestrians.positions[fv],
+                             pedestrians.positions[efv]) 
 
+        intersection = np.where(dm < SwitchDistances.to_pedestrian, 1, 0) 
+        intersection = np.logical_and(intersection, sr)
+        #€ add mask for walls
         fv_directions = self.estimate_mean_direction_among_neighbours(
             intersection, efv_directions
         )     

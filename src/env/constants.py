@@ -4,7 +4,7 @@
 
 NUM_PEDESTRIANS = 30                        # ! number of pedestrians
 EPS = 1e-8 
-ENSLAVING_DEGREE = 0.1                      # ! leader's enslaving degree
+ENSLAVING_DEGREE = 0.5                      # ! leader's enslaving degree
 
 # Area params
 WIDTH = 1.0                                 # ! geometry of environment space: width
@@ -13,7 +13,7 @@ STEP_SIZE = 0.01                            # ! 0.1, 0.05, 0.01
 NOISE_COEF = 0.1                            # ! randomization in viscek model
 
 # Reward params
-TERMINATION_AGENT_WALL_COLLISION = False    # ! is or no termination for agent's wall collision
+TERMINATION_AGENT_WALL_COLLISION = True    # ! is or no termination for agent's wall collision
 INTRINSIC_REWARD_COEF = 1.                  # ! coef of intrinsic reward
 IS_NEW_EXITING_REWARD = True                # ! if enable reward for new exiting
 IS_NEW_FOLLOWERS_REWARD = True              # ! if enable reward for new followers

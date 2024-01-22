@@ -13,7 +13,7 @@ class Agent:
     enslaving_degree: float                     # 0 < enslaving_degree <= 1
 
     def __init__(self, enslaving_degree):
-        self.start_position = np.zeros(2, dtype=np.float32) #€ randomize or set at the entrance
+        self.start_position = np.array([0.0,-0.9]) #€ randomize or set at the entrance
         self.start_direction = np.zeros(2, dtype=np.float32)
         self.start_doors = np.zeros(3, dtype=np.float32)
         self.enslaving_degree = enslaving_degree
