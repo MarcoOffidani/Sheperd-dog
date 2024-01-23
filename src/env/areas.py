@@ -107,7 +107,7 @@ class Area:
             mask= np.zeros((m,n)) 
             for i in range(m):
                 for j in range(n):
-                    mask[i,j]= ( a[i][1]<0 and b[j][1] ) < 0 or ( a[i][1] * b[j][1] <0 and a[i][0] * b[j][0] <0 )
+                    mask[i,j]= ( a[i][1]<0 and b[j][1] ) < 0 or ( a[i][1] * b[j][1] > 0 and a[i][0] * b[j][0] > 0 )
                 
             return mask
                     
