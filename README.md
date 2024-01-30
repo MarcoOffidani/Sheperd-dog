@@ -1,12 +1,11 @@
 # evacuation
 
-RL environment to study the evacuation of pedestrians for dummly rooms.
-
+RL environment to study the evacuation of pedestrians from bulding with a couple of rooms
 ## Installation
 
 ```
-git clone https://github.com/cinemere/evacuation
-cd evacuation
+git clone https://github.com/Lograd51/Sheperd-dog/tree/walls
+cd Sheperd-dog
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

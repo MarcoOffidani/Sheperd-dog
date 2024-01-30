@@ -24,7 +24,7 @@ class RLAgent(BaseAgent):
     mode = str
     
     def __init__(self, 
-        action_space: spaces.Box,
+        action_space: spaces.Box, #€ here add 3 dimension
         network: nn.Module,
         mode: str = 'training',
         learning_rate: float = 1e-4, 

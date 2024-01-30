@@ -58,7 +58,7 @@ def setup_wandb(args, experiment_name):
     save_config = dict(config_args, **config_switch_distances)
 
     wandb.init(
-        project="evacuation",
+        project="sheperd dog",
         name=args.exp_name,
         notes=experiment_name,
         config=save_config
