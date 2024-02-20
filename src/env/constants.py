@@ -35,10 +35,10 @@ SWITCH_DISTANCE_TO_ESCAPE = 0.01
 SWITCH_DISTANCE_TO_FALL = 0.0001
 
 WALL_HOLE_HALF_WIDTH = 0.15                    # put 0.5 in order to remove the wall
-
+WALLS = [((-1 + WALL_HOLE_HALF_WIDTH, 0), (1 - WALL_HOLE_HALF_WIDTH, 0))]
 SAVE_PATH_GIFF = 'saved_data/giff'
 SAVE_PATH_PNG  = 'saved_data/png'
 SAVE_PATH_LOGS = 'saved_data/logs'
 
 VERTICAL_WALL_POSITION = 0.0  # Horizontal position of the vertical wall
-VERTICAL_WALL_HALF_WIDTH = 0.15  # Half-width of the vertical wall opening
+VERTICAL_WALL_HALF_WIDTH = 0.5  # Half-width of the vertical wall opening

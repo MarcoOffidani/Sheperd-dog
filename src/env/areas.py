@@ -10,7 +10,56 @@ from src.env.pedestrians import Pedestrians
 
 from src.env.rewards import Reward
 from src.env.utils import Exit, Status, SwitchDistances, update_statuses
+from numpy.linalg import solve, LinAlgError
+import numpy as np
 
+def do_intersect(p1, q1, p2, q2):
+    # Convert points to linear equations of the form Ax + By = C
+    A1, B1 = q1[1] - p1[1], p1[0] - q1[0]  # A = y2 - y1, B = x1 - x2 for line 1
+    C1 = A1 * p1[0] + B1 * p1[1]
+    A2, B2 = q2[1] - p2[1], p2[0] - q2[0]  # A = y2 - y1, B = x1 - x2 for line 2
+    C2 = A2 * p2[0] + B2 * p2[1]
+    
+    matrix = np.array([[A1, B1], [A2, B2]])
+    constants = np.array([C1, C2])
+    
+    try:
+        # Solve the linear equations system to find the intersection point
+        solution = solve(matrix, constants)
+        
+        # Check if the solution (intersection point) lies within the bounds of both line segments
+        if (min(p1[0], q1[0]) <= solution[0] <= max(p1[0], q1[0]) and
+            min(p1[1], q1[1]) <= solution[1] <= max(p1[1], q1[1]) and
+            min(p2[0], q2[0]) <= solution[0] <= max(p2[0], q2[0]) and
+            min(p2[1], q2[1]) <= solution[1] <= max(p2[1], q2[1])):
+            return True  # Segments intersect
+        else:
+            return False  # Segments do not intersect
+    except LinAlgError:
+        # The lines are parallel or coincident (no single intersection point)
+        return False
+def calculate_detour(agent_pos, pedestrian_pos, wall):
+    # Calculate distances for detours via wall[0] and wall[1]
+    detour_via_wall0 = np.linalg.norm(agent_pos - wall[0]) + np.linalg.norm(wall[0] - pedestrian_pos)
+    detour_via_wall1 = np.linalg.norm(agent_pos - wall[1]) + np.linalg.norm(wall[1] - pedestrian_pos)
+    
+    # Choose the shortest path
+    if detour_via_wall0 < detour_via_wall1:
+        chosen_wall_corner = wall[0]
+        detour_distance = detour_via_wall0
+    else:
+        chosen_wall_corner = wall[1]
+        detour_distance = detour_via_wall1
+    
+    # Construct the detour vector
+    # First, find the direction vector from agent to the chosen corner and normalize it
+    direction_to_corner = chosen_wall_corner - agent_pos
+    direction_to_corner_normalized = direction_to_corner / np.linalg.norm(direction_to_corner)
+    
+    # Then, create the detour vector with the correct magnitude (total detour distance)
+    detour_vector = direction_to_corner_normalized * detour_distance
+    
+    return detour_vector
 def check_horizonthal_bumping(positions, old_pos, num_openings, opening_positions, doors):
     to_bump_mask = positions[:, 1] * old_pos[:, 1] < 0
 
@@ -92,25 +141,50 @@ class Area:
             pedestrians.directions[exiting] = vec2exit
 
     def pedestrians_step(self, pedestrians : Pedestrians, agent : Agent, now : int) -> Tuple[Pedestrians, bool, float, float]:
-        def check_if_same_room(a, b):
-            #print('a')
-            #print(a)
-            #print('b')
-            #print(b)
+        '''def check_if_same_room(a, b):
+            print('a')
+            print(a)
+            print('b')
+            print(b)
 
             m = len(a)
             n = len(b)
-            #print('m')
-            #print(m)
-            #print('n')
-            #print(n)
+            print('m')
+            print(m)
+            print('n')
+            print(n)
             mask= np.zeros((m,n)) 
             for i in range(m):
                 for j in range(n):
                     mask[i,j]= ( a[i][1]<0 and b[j][1] ) < 0 or ( a[i][1] * b[j][1] > 0 and a[i][0] * b[j][0] > 0 )
                 
-            return mask
-                    
+            return mask'''
+        def check_if_same_room(a, b, walls=constants.WALLS):
+            #print('a')
+            #print(a)
+            #print('b')
+            #print(b)
+
+            m, n = len(a), len(b)
+            #print('m')
+            #print(m)
+            #print('n')
+            #print(n)
+
+            # Initialize the mask with True values
+            mask = np.ones((m, n), dtype=bool)
+            
+            # Update the mask to False where segments intersect with any wall
+            for i in range(m):
+                for j in range(n):
+                    segment_start = a[i]
+                    segment_end = b[j]
+                    for wall in walls:
+                        if do_intersect(segment_start, segment_end, wall[0], wall[1]):
+                            mask[i, j] = False
+                            break  # No need to check other walls if one intersection is found
+            
+            return mask                    
         # print(np.any(pedestrians.statuses == Status.FALLEN))
 
         # Check evacuated pedestrians & record new directions and positions of escaped pedestrians
@@ -136,8 +210,7 @@ class Area:
         fv = reduce(np.logical_or, (following, viscek))
         dm = distance_matrix(pedestrians.positions[fv],
                              pedestrians.positions[efv], 2)
-        sr = check_if_same_room(pedestrians.positions[fv],
-                             pedestrians.positions[efv]) 
+        sr = check_if_same_room(pedestrians.positions[fv],pedestrians.positions[efv]) 
 
         intersection = np.where(dm < SwitchDistances.to_pedestrian, 1, 0) 
         intersection = np.logical_and(intersection, sr)
@@ -177,7 +250,7 @@ class Area:
 
         # horizhontal wall bumping HERE€
         # Define the positions of the two openings
-        opening_positions = [-0.5, 0.5]
+        opening_positions = [-0.85, 0.85]
         num_openings=len(opening_positions)
         #€to_bump_mask1 = pedestrians.positions[:, 1] * old_pos[:, 1] < 0
         # #to_bump_mask = np.logical_and(to_bump_mask, np.abs(pedestrians.positions[:,0]) > constants.WALL_HOLE_HALF_WIDTH)
@@ -239,8 +312,11 @@ class Area:
             3. Return (updated agent, termination, reward)
         """
         m_action= action[[0,1]] #€
-        d_action = action[[2,3,4]]
-        #print(type(action))
+        #d_action = [action[[2,3,4]]] #shit to remove doors
+        #print(type(m_action))
+        #print(m_action)
+        d_action = np.array([-1,-1,-1]) #shit to remove doors
+        #print(type(d_action))
         #print(d_action)
         self.doors = (d_action + 1)* constants.WALL_HOLE_HALF_WIDTH / 2 
         #print(self.doors)

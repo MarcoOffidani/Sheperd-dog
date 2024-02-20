@@ -22,7 +22,11 @@ from src.params import WALK_DIAGRAM_LOGGING_FREQUENCY
 import wandb
 
 log = logging.getLogger(__name__)
-
+'''def minimal_distance(position, target, corners):
+    if not solve_linear():
+        use euclidean distance 
+    else:
+        use some strange shit with corners'''
 def setup_logging(verbose: bool, experiment_name: str) -> None:
     logs_folder = constants.SAVE_PATH_LOGS
     if not os.path.exists(logs_folder): os.makedirs(logs_folder)
@@ -60,8 +64,89 @@ def grad_potential_pedestrians(
         grad = np.zeros(2)
         
     return grad
+#€€€ siht storming starts here
+from numpy.linalg import solve, LinAlgError
+import numpy as np
 
-def grad_time_derivative_pedestrians(
+def do_intersect(p1, q1, p2, q2):
+    # Convert points to linear equations of the form Ax + By = C
+    A1, B1 = q1[1] - p1[1], p1[0] - q1[0]  # A = y2 - y1, B = x1 - x2 for line 1
+    C1 = A1 * p1[0] + B1 * p1[1]
+    A2, B2 = q2[1] - p2[1], p2[0] - q2[0]  # A = y2 - y1, B = x1 - x2 for line 2
+    C2 = A2 * p2[0] + B2 * p2[1]
+    
+    matrix = np.array([[A1, B1], [A2, B2]])
+    constants = np.array([C1, C2])
+    
+    try:
+        # Solve the linear equations system to find the intersection point
+        solution = solve(matrix, constants)
+        
+        # Check if the solution (intersection point) lies within the bounds of both line segments
+        if (min(p1[0], q1[0]) <= solution[0] <= max(p1[0], q1[0]) and
+            min(p1[1], q1[1]) <= solution[1] <= max(p1[1], q1[1]) and
+            min(p2[0], q2[0]) <= solution[0] <= max(p2[0], q2[0]) and
+            min(p2[1], q2[1]) <= solution[1] <= max(p2[1], q2[1])):
+            return True  # Segments intersect
+        else:
+            return False  # Segments do not intersect
+    except LinAlgError:
+        # The lines are parallel or coincident (no single intersection point)
+        return False
+def calculate_detour(agent_pos, pedestrian_pos, wall):
+    # Calculate distances for detours via wall[0] and wall[1]
+    detour_via_wall0 = np.linalg.norm(agent_pos - wall[0]) + np.linalg.norm(wall[0] - pedestrian_pos)
+    detour_via_wall1 = np.linalg.norm(agent_pos - wall[1]) + np.linalg.norm(wall[1] - pedestrian_pos)
+    
+    # Choose the shortest path
+    if detour_via_wall0 < detour_via_wall1:
+        chosen_wall_corner = wall[0]
+        detour_distance = detour_via_wall0
+    else:
+        chosen_wall_corner = wall[1]
+        detour_distance = detour_via_wall1
+    
+    # Construct the detour vector
+    # First, find the direction vector from agent to the chosen corner and normalize it
+    direction_to_corner = chosen_wall_corner - agent_pos
+    direction_to_corner_normalized = direction_to_corner / np.linalg.norm(direction_to_corner)
+    
+    # Then, create the detour vector with the correct magnitude (total detour distance)
+    detour_vector = direction_to_corner_normalized * detour_distance
+    
+    return detour_vector
+def grad_potential_pedestrians(agent, pedestrians, walls=constants.WALLS, alpha=constants.ALPHA):
+    R = agent.position[np.newaxis, :] - pedestrians.positions
+    R = R[pedestrians.statuses == Status.VISCEK]
+    adjusted_R = []
+    
+    for i, r in enumerate(R):
+        intersection = False
+        for wall in walls:
+            if do_intersect(agent.position, agent.position + r, wall[0], wall[1]):
+                intersection = True
+                # Calculate detour vector and replace 'r' with this new vector
+                r = calculate_detour(agent.position, agent.position + r, wall)
+                break  # Assuming only one wall can block the path for simplicity
+        if not intersection:
+            adjusted_R.append(r)
+        else:
+            # Here, handle the case where 'r' is adjusted for detours
+            adjusted_R.append(r)  # Assuming 'r' is now the adjusted vector
+
+    # Convert adjusted_R back into a NumPy array for further processing
+    adjusted_R = np.array(adjusted_R)
+
+    if len(adjusted_R) != 0:
+        norm = np.linalg.norm(adjusted_R, axis=1)[:, np.newaxis] + constants.EPS
+        grad = -alpha / norm ** (alpha + 2) * adjusted_R
+        grad = grad.sum(axis=0)
+    else:
+        grad = np.zeros(2)
+
+    return grad
+
+'''def grad_time_derivative_pedestrians(
         agent: Agent, pedestrians: Pedestrians, alpha: float = constants.ALPHA
     ) -> np.ndarray:
 
@@ -78,20 +163,75 @@ def grad_time_derivative_pedestrians(
     else:
         grad = np.zeros(2)
         
+    return grad'''
+import numpy as np
+
+
+def grad_time_derivative_pedestrians(agent, pedestrians, walls=constants.WALLS, alpha=constants.ALPHA):
+    R = agent.position[np.newaxis, :] - pedestrians.positions
+    R = R[pedestrians.statuses == Status.VISCEK]
+    V = agent.direction[np.newaxis, :] - pedestrians.directions  # Assuming direction attribute exists
+    V = V[pedestrians.statuses == Status.VISCEK]
+    adjusted_R = []
+    
+    for i, r in enumerate(R):
+        intersection = False
+        for wall in walls:
+            if do_intersect(agent.position, agent.position + r, wall[0], wall[1]):
+                intersection = True
+                # Calculate detour vector and replace 'r' with this new vector
+                r = calculate_detour(agent.position, agent.position + r, wall)
+                break  # Assuming only one wall can block the path for simplicity
+        adjusted_R.append(r)
+
+    adjusted_R = np.array(adjusted_R)
+
+    if len(adjusted_R) != 0:
+        norm = np.linalg.norm(adjusted_R, axis=1)[:, np.newaxis] + constants.EPS
+        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.sum(V * adjusted_R, axis=1, keepdims=True) * adjusted_R)
+        grad = grad.sum(axis=0)
+    else:
+        grad = np.zeros(2)
+        
     return grad
 
 
-def grad_potential_exit(
+
+'''def grad_potential_exit(
         agent: Agent, pedestrians: Pedestrians, exit: Exit, alpha: float = constants.ALPHA
     ) -> np.ndarray:
     R = agent.position - exit.position
     norm = np.linalg.norm(R) + constants.EPS
     grad = - alpha / norm ** (alpha + 2) * R
     grad *= sum(pedestrians.statuses == Status.FOLLOWER)
+    return grad'''
+
+def grad_potential_exit(agent, exit, pedestrians: Pedestrians, walls=constants.WALLS, alpha=constants.ALPHA):
+    R = agent.position - exit.position
+    intersection_found = False
+
+    # Check for intersection with each wall
+    for wall in walls:
+        if do_intersect(agent.position, exit.position, wall[0], wall[1]):
+            # If there is an intersection, calculate the detour vector
+            R = calculate_detour(agent.position, exit.position, wall)
+            intersection_found = True
+            break
+
+    if not intersection_found:
+        # If no intersection, proceed with the original R vector
+        norm = np.linalg.norm(R) + constants.EPS
+    else:
+        # If a detour is calculated, no need to add EPS since R is not zero-length
+        norm = np.linalg.norm(R)
+
+    grad = - alpha / norm ** (alpha + 2) * R
+    grad *= sum(pedestrians.statuses == Status.FOLLOWER)  # Adjusted to use agent's attribute, assuming it's available
+
     return grad
 
 
-def grad_time_derivative_exit(
+'''def grad_time_derivative_exit(
         agent: Agent, pedestrians: Pedestrians, exit: Exit, alpha: float = constants.ALPHA
     ) -> np.ndarray:
 
@@ -108,8 +248,36 @@ def grad_time_derivative_exit(
     else:
         grad = np.zeros(2)
         
-    return grad
+    return grad'''
+def grad_time_derivative_exit(
+        agent: Agent, pedestrians: Pedestrians, exit: Exit, alpha: float = constants.ALPHA
+    ) -> np.ndarray:
 
+    R = agent.position - exit.position
+
+    V = agent.direction
+    
+    N = sum(pedestrians.statuses == Status.FOLLOWER)
+
+    intersection_found = False
+    for wall in constants.WALLS:
+        if do_intersect(agent.position, agent.position + R, wall[0], wall[1]):
+            intersection_found = True
+            R = calculate_detour(agent.position, agent.position + R, wall)
+            break
+
+    if not intersection_found:
+        norm = np.linalg.norm(R) + constants.EPS
+    else:
+        norm = np.linalg.norm(R)
+
+    if N != 0:
+        grad = - alpha / norm ** (alpha + 4) * (V * norm**2 - (alpha + 2) * np.dot(V, R) * R)
+        grad *= N
+    else:
+        grad = np.zeros(2)
+        
+    return grad
 
 class EvacuationEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -183,7 +351,7 @@ class EvacuationEnv(gym.Env):
         self.enabled_gravity_and_speed_embedding = enabled_gravity_and_speed_embedding
         self.alpha = alpha
 
-        self.action_space = spaces.Box(low=-1., high=1., shape=(5,), dtype=np.float32) #€ add one extra dimension for each door
+        self.action_space = spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32) #€ add one extra dimension for each door
         self.observation_space = self._get_observation_space()
         
         # logging
@@ -431,7 +599,7 @@ class EvacuationEnv(gym.Env):
         #plt.hlines([0], constants.WALL_HOLE_HALF_WIDTH, self.area.width, linestyle='--', color='grey')
         # Define the positions of the two openings
         # Define the positions of the openings
-        opening_positions = [-0.5, 0.5]
+        opening_positions = [-0.85, 0.85]
 
 
         # Define the width of the wall (assuming self.area.width is available)
