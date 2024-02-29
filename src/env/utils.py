@@ -6,7 +6,7 @@ from src.env import constants
 
 from enum import Enum, auto
 
-def update_statuses(statuses, pedestrian_positions, agent_position, exit_position):
+def update_statuses(statuses, pedestrian_positions, agent_position, exit_position): #add walls €€€
     """Measure statuses of all pedestrians based on their position"""
     new_statuses = statuses.copy()
 

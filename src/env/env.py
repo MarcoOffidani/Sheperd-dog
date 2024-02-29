@@ -50,7 +50,7 @@ def count_new_statuses(old_statuses, new_statuses):
     return count
 
 
-def grad_potential_pedestrians(
+'''def grad_potential_pedestrians(
         agent: Agent, pedestrians: Pedestrians, alpha: float = constants.ALPHA
     ) -> np.ndarray:
     R = agent.position[np.newaxis, :] - pedestrians.positions
@@ -63,7 +63,7 @@ def grad_potential_pedestrians(
     else:
         grad = np.zeros(2)
         
-    return grad
+    return grad'''
 #€€€ siht storming starts here
 from numpy.linalg import solve, LinAlgError
 import numpy as np
@@ -123,10 +123,10 @@ def grad_potential_pedestrians(agent, pedestrians, walls=constants.WALLS, alpha=
     for i, r in enumerate(R):
         intersection = False
         for wall in walls:
-            if do_intersect(agent.position, agent.position + r, wall[0], wall[1]):
+            if do_intersect(agent.position, agent.position - r, wall[0], wall[1]):
                 intersection = True
                 # Calculate detour vector and replace 'r' with this new vector
-                r = calculate_detour(agent.position, agent.position + r, wall)
+                r = calculate_detour(agent.position, agent.position - r, wall)
                 break  # Assuming only one wall can block the path for simplicity
         if not intersection:
             adjusted_R.append(r)
@@ -177,10 +177,10 @@ def grad_time_derivative_pedestrians(agent, pedestrians, walls=constants.WALLS, 
     for i, r in enumerate(R):
         intersection = False
         for wall in walls:
-            if do_intersect(agent.position, agent.position + r, wall[0], wall[1]):
+            if do_intersect(agent.position, agent.position - r, wall[0], wall[1]):
                 intersection = True
                 # Calculate detour vector and replace 'r' with this new vector
-                r = calculate_detour(agent.position, agent.position + r, wall)
+                r = calculate_detour(agent.position, agent.position - r, wall)
                 break  # Assuming only one wall can block the path for simplicity
         adjusted_R.append(r)
 
@@ -261,9 +261,9 @@ def grad_time_derivative_exit(
 
     intersection_found = False
     for wall in constants.WALLS:
-        if do_intersect(agent.position, agent.position + R, wall[0], wall[1]):
+        if do_intersect(agent.position, agent.position - R, wall[0], wall[1]):
             intersection_found = True
-            R = calculate_detour(agent.position, agent.position + R, wall)
+            R = calculate_detour(agent.position, agent.position - R, wall)
             break
 
     if not intersection_found:

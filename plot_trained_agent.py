@@ -12,7 +12,7 @@ model = PPO(
             env, verbose=1
         )
 
-model.load('saved_data/models/fuckyou')
+model.load('saved_data/models/last_n-20_lr-0.0003_gamma-0.99_s-ped_ss-0.01_vr-0.1_28-Feb-18-07-51.zip')
 
 import wandb
 

@@ -347,7 +347,7 @@ class Area:
         else:
             return agent, self.reward.is_termination_agent_wall_collision, -5.
 
-    def _if_wall_collision(self, agent : Agent):
+    def _if_wall_collision(self, agent : Agent): #change entirely this stuff €€€
         pt = agent.position + agent.direction
 
         left  = pt[0] < -self.width
