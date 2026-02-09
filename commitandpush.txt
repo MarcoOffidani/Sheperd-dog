@@ -1,0 +1,13 @@
+cd C:\Users\Asus\Documents\GitHub\Sheperd-dog
+git init
+git add *
+git commit -am "brutal merge"
+
+git push -u https://github.com/MarcoOffidani/Sheperd-dog.git
+
+cd C:\Users\Asus\Documents\GitHub\Sheperd-dog
+git init
+git add *
+git commit -am "added time derivative oservation"
+
+git push --force -u https://github.com/MarcoOffidani/Sheperd-dog.git

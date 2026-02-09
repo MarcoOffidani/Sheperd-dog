@@ -1,0 +1,3 @@
+cd /mnt/c/Users/Asus/Documents/GitHub/Sheperd-dog
+
+source .venv/bin/activate

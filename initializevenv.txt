@@ -1,0 +1,5 @@
+cd C:\Users\Asus\Documents\GitHub\Sheperd-dog\venv\Scripts
+
+activate.bat
+
+cd C:\Users\Asus\Documents\GitHub\Sheperd-dog

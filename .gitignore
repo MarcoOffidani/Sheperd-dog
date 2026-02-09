@@ -1,0 +1,16 @@
+ 
+
+# python libraries
+venv/
+.venv/
+# cached files
+src/__pycache__/
+
+# results of experiments
+saved_data/
+wandb/
+ 
+
+#watever
+
+.idea/
