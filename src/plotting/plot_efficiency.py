@@ -22,7 +22,7 @@ wandb.init(mode="disabled")
 path_save = 'saved_data/plot_efficiency'
 os.makedirs(path_save, exist_ok=True)
 
-DEVICE = 'cpu'
+DEVICE = 'cuda'
 N_REPEATS = 5_000
 
 MODE = "FULL_ENSLAVING"

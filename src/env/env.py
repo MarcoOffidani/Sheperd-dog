@@ -106,7 +106,11 @@ def sum_distance(pedestrians_positions, destination):
     )
     return distances.sum() / pedestrians_positions.shape[0]
 
-def do_intersect_parallel_allinone( p1, p2, walls=constants.WALLS):
+def do_intersect_parallel_allinone( p1, p2, walls=constants.WALLS): # NOTE: duplicated intentionally for commit diff review; will be removed later.
+    if constants.DEACTIVATE_WALLS:
+        p1 = np.array(p1)
+        p2 = np.array(p2)
+        return np.zeros((p2.shape[0], p1.shape[0]), dtype=bool)
     walls_array = np.array(walls)
     # Convert inputs to numpy arrays for efficient calculations
     w1, w2 = (walls_array[:,0]), np.array(walls_array[:,1])
@@ -778,6 +782,10 @@ def do_intersect(w1, w2, p1, p2):
 
 
 def do_intersect_parallel_alllinonebroken( p1, p2, walls=constants.WALLS):
+    if constants.DEACTIVATE_WALLS:
+        p1 = np.array(p1)
+        p2 = np.array(p2)
+        return np.zeros((p2.shape[0], p1.shape[0]), dtype=bool)
     walls_array = np.array(walls)
     # Convert inputs to numpy arrays for efficient calculations
     w1, w2 = (walls_array[:,0]), np.array(walls_array[:,1])
@@ -879,7 +887,12 @@ def do_intersect_parallel_alllinonebroken( p1, p2, walls=constants.WALLS):
     #print(f"Intersects shape: {intersects.shape}, Intersects: {intersects}")
     
     return intersects
-def do_intersect_parallel_allinone( p1, p2, walls=constants.WALLS):
+def do_intersect_parallel_allinone(p1, p2, walls=constants.WALLS):
+    if constants.DEACTIVATE_WALLS:
+        p1 = np.array(p1)
+        p2 = np.array(p2)
+        return np.zeros((p2.shape[0], p1.shape[0]), dtype=bool)
+
     walls_array = np.array(walls)
     # Convert inputs to numpy arrays for efficient calculations
     w1, w2 = (walls_array[:,0]), np.array(walls_array[:,1])
@@ -1082,6 +1095,10 @@ def do_intersect_parallel(w1, w2, p1, p2):
 
 
 def check_if_there_is_a_direct_path(a, b, walls=constants.WALLS):
+    if constants.DEACTIVATE_WALLS:
+        a = np.array(a)
+        b = np.array(b)
+        return np.ones((a.shape[0], b.shape[0]), dtype=bool)
     #print(f"Initial shapes: a={a.shape}, b={b.shape}")  # Debug print
     walls_array= np.array(walls)
     # Ensure all inputs are numpy arrays
@@ -1218,6 +1235,8 @@ def calculate_detour_time_derivative(agent_pos, target_pos, agent_speed, target_
     return time_derivative_detour
 #def check_horizonthal_bumping(positions, old_pos, num_openings, opening_positions, doors):
 def check_horizonthal_bumping(positions, old_pos, num_openings, opening_positions):
+    if constants.DEACTIVATE_WALLS:
+        return np.zeros((positions.shape[0],), dtype=bool)
     to_bump_mask = positions[:, 1] * old_pos[:, 1] < 0
 
     for count, opening_position in enumerate(opening_positions):
@@ -1232,6 +1251,8 @@ def check_horizonthal_bumping(positions, old_pos, num_openings, opening_position
     
 def check_vertical_bumping(positions, old_pos, num_openings, opening_positions):
 #def check_vertical_bumping(positions, old_pos, num_openings, opening_positions, doors):
+    if constants.DEACTIVATE_WALLS:
+        return np.zeros((positions.shape[0],), dtype=bool)
     to_bump_mask = np.logical_and(
     positions[:, 0] * old_pos[:, 0] < 0,
     old_pos[:, 1] > constants.VERTICAL_WALL_POSITION 
@@ -2131,9 +2152,10 @@ class EvacuationEnv(gym.Env):
             my_obs_grad_exi_time = (self.agent.memory['grad_time_derivative_exit'][0])            
         #print(f"{my_obs_grad_ped=} { my_obs_grad_exi=}")
         #plot Middle Wall
-        plt.hlines([0], -0.5 + constants.WALL_HOLE_HALF_WIDTH, 0.5 - constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
-        plt.hlines([0], -1 , -0.5 - constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
-        plt.hlines([0], 0.5 + constants.WALL_HOLE_HALF_WIDTH, 1 , linestyle='--', color='grey')
+        if not constants.DEACTIVATE_WALLS:
+            plt.hlines([0], -0.5 + constants.WALL_HOLE_HALF_WIDTH, 0.5 - constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
+            plt.hlines([0], -1 , -0.5 - constants.WALL_HOLE_HALF_WIDTH, linestyle='--', color='grey')
+            plt.hlines([0], 0.5 + constants.WALL_HOLE_HALF_WIDTH, 1 , linestyle='--', color='grey')
         # Draw exiting zone
         exiting_zone = mpatches.Wedge(
             exit_coordinates, 

@@ -5,7 +5,7 @@ venv/
 .venv/
 # cached files
 src/__pycache__/
-
+src/env/__pycache__/
 # results of experiments
 saved_data/
 wandb/
@@ -14,3 +14,7 @@ wandb/
 #watever
 
 .idea/
+# Local outputs / artifacts
+escaped_counts.csv
+analysis.txt
+analyssis_expanded.txt
