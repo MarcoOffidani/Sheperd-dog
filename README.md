@@ -71,6 +71,7 @@ Configurabili via CLI:
 - `NOISE_COEF` (`--noise-coef`)
 - `NUM_OBS_STACKS` (`--num-obs-stacks`)
 - `USE_RELATIVE_POSITIONS` (`--use-relative-positions`)
+- `DEACTIVATE_WALLS` (`--deactivate-walls`)
 - `ENSLAVING_DEGREE` (`--enslaving-degree`)
 - `IS_NEW_EXITING_REWARD` (`--is-new-exiting-reward`)
 - `IS_NEW_FOLLOWERS_REWARD` (`--is-new-followers-reward`)
@@ -100,7 +101,16 @@ Non configurabili via CLI (solo editing diretto del file):
 - `WALL3`
 - `VERTICAL_WALL_POSITION`
 - `VERTICAL_WALL_HALF_WIDTH`
-- `DEACTIVATE_WALLS` (disabilita solo i muri interni, lasciando invariati i confini esterni)
+
+## DEACTIVATE_WALLS / --deactivate-walls
+
+Disabilita la logica/disegno/interazioni dei muri interni, mantenendo invariati i confini esterni (collisioni con i bordi della stanza).
+
+Esempio minimo:
+
+```bash
+python main.py --exp-name "no_walls" --deactivate-walls
+```
 
 ## Output
 

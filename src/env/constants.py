@@ -51,4 +51,4 @@ VERTICAL_WALL_POSITION = 0.0  # Horizontal position of the vertical wall
 VERTICAL_WALL_HALF_WIDTH = 0.5  # Half-width of the vertical wall opening, put 0.5 in order to remove the wall
 
 # Global feature flag: disable internal walls while keeping boundary collisions active
-DEACTIVATE_WALLS = True
+DEACTIVATE_WALLS = False

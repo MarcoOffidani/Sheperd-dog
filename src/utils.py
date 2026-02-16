@@ -56,6 +56,8 @@ def parse_args(inline_mode=False, request=""):
         help="number of times to stack observation")
     env_params.add_argument('-rel', '--use-relative-positions', type=str2bool, default=constants.USE_RELATIVE_POSITIONS,
         help="add relative positions wrapper (can be use only WITHOUT gravity embedding)")
+    env_params.add_argument('--deactivate-walls', action='store_true',
+        help="disable internal walls logic/drawing/interactions (external boundaries remain active)")
     
     leader_params = parser.add_argument_group('leader params')
     leader_params.add_argument('--enslaving-degree', type=float, default=constants.ENSLAVING_DEGREE,
@@ -104,6 +106,7 @@ def parse_args(inline_mode=False, request=""):
     '''if args.enabled_gravity_and_speed_embedding:
         assert not args.use_relative_positions, \
             "Relative positions wrapper can NOT be used while enabled gravity embedding"''' 
+    constants.DEACTIVATE_WALLS = args.deactivate_walls
     return args
 
 def get_experiment_name(args):
