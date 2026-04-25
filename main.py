@@ -2,6 +2,7 @@ import os
 import numpy as np
 from gymnasium.wrappers import FrameStack, FlattenObservation
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CheckpointCallback
 import wandb
 #print("something")
 from src.env import EvacuationEnv, RelativePosition, constants
@@ -52,6 +53,8 @@ def setup_env(args, experiment_name):
 
 
 def setup_model(args, env): 
+    if args.load_model_path:
+        return PPO.load(args.load_model_path, env=env, device=args.device)
     
     if args.origin == 'ppo':
         model = PPO(
@@ -103,8 +106,20 @@ if __name__ == "__main__":
     model = setup_model(args, env)
     #model.load('11may.zip') #remove .for training
     #model.learning_rate = 0.0
+    checkpoint_dir = os.path.join(params.SAVE_PATH_MODELS, "checkpoints")
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    checkpoint_callback = CheckpointCallback(
+        save_freq=args.checkpoint_frequency_timesteps,
+        save_path=checkpoint_dir,
+        name_prefix=experiment_name,
+    )
     try:
-        model.learn(args.learn_timesteps, tb_log_name=experiment_name)
+        model.learn(
+            args.learn_timesteps,
+            tb_log_name=experiment_name,
+            callback=checkpoint_callback,
+            reset_num_timesteps=not bool(args.load_model_path),
+        )
     finally:
         env.close()
  

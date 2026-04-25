@@ -2112,15 +2112,34 @@ class EvacuationEnv(gym.Env):
         append additional simulation data, and ensure data integrity for multiple runs saved to a CSV file.'''
         
         escaped_counts = []
-        for timestep, status in enumerate(self.pedestrians.memory['statuses']):
+        statuses_memory = self.pedestrians.memory['statuses']
+        first_global_timestep = self.time.overall_timesteps - max(len(statuses_memory) - 1, 0)
+        for env_step, status in enumerate(statuses_memory):
             escaped_count = np.sum(status == Status.ESCAPED)
-            # Add additional simulation data to each tuple
-            escaped_counts.append((timestep, escaped_count, self.time.n_episodes, constants.NUM_PEDESTRIANS))
+            global_timestep = first_global_timestep + env_step
+            escaped_counts.append((
+                self.experiment_name,
+                env_step,
+                global_timestep,
+                escaped_count,
+                self.time.n_episodes,
+                constants.NUM_PEDESTRIANS,
+                False
+            ))
 
         # Ensure output is from 0 to MAX_TIMESTEPS
         if len(escaped_counts) < constants.MAX_TIMESTEPS:
-            last_value = escaped_counts[-1] if escaped_counts else (0, 0, self.time.n_episodes, constants.NUM_PEDESTRIANS)
-            escaped_counts.extend([last_value] * (constants.MAX_TIMESTEPS - len(escaped_counts)))
+            last_value = escaped_counts[-1] if escaped_counts else (
+                self.experiment_name,
+                0,
+                self.time.overall_timesteps,
+                0,
+                self.time.n_episodes,
+                constants.NUM_PEDESTRIANS,
+                False
+            )
+            padded_value = (*last_value[:-1], True)
+            escaped_counts.extend([padded_value] * (constants.MAX_TIMESTEPS - len(escaped_counts)))
 
         self.escaped_counts_buffer.extend(escaped_counts)
         if self.time.n_episodes % WALK_DIAGRAM_LOGGING_FREQUENCY == 0:
@@ -2132,7 +2151,15 @@ class EvacuationEnv(gym.Env):
 
         df = pd.DataFrame(
             self.escaped_counts_buffer,
-            columns=['Timestep', 'EscapedCount', 'Episodes', 'TotalPedestrians']
+            columns=[
+                'experiment_name',
+                'EnvStep',
+                'global_timestep',
+                'EscapedCount',
+                'episode_idx',
+                'TotalPedestrians',
+                'padded'
+            ]
         )
         with open('escaped_counts.csv', 'a') as f:
             df.to_csv(f, header=f.tell()==0, index=False)

@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 
 from src.env import constants
+from src import params
 from src.params import *
 
 def str2bool(v):
@@ -26,6 +27,10 @@ def parse_args(inline_mode=False, request=""):
         choices=['ppo', 'a2c', 'sac'], help="which model to use")
     model_params.add_argument('--learn-timesteps', type=int, default=5_000_000,
         help='number of timesteps to learn the model')
+    model_params.add_argument('--checkpoint-frequency-timesteps', type=int, default=params.CHECKPOINT_FREQUENCY_TIMESTEPS,
+        help='number of timesteps between Stable-Baselines3 checkpoints')
+    model_params.add_argument('--load-model-path', type=str, default=None,
+        help='path to a Stable-Baselines3 model zip to resume from')
     model_params.add_argument('--learning-rate', type=float, default=0.0005,
         help='learning rate for stable baselines ppo model')
     model_params.add_argument('--gamma', type=float, default=0.99,

@@ -1,0 +1,36 @@
+CSV logging schema update
+
+Old schema
+- File: escaped_counts.csv
+- Columns:
+  - Timestep
+  - EscapedCount
+  - Episodes
+  - TotalPedestrians
+- Rows did not identify the run or experiment, so repeated appends from different runs were hard to separate.
+- Timestep was episode-local but ambiguously named.
+- Episodes represented the current environment episode counter.
+- Early-evacuation episodes were padded by repeating the final row up to MAX_TIMESTEPS without an explicit marker.
+
+New schema
+- File: escaped_counts.csv
+- Columns:
+  - experiment_name
+  - EnvStep
+  - global_timestep
+  - EscapedCount
+  - episode_idx
+  - TotalPedestrians
+  - padded
+- experiment_name is the environment run name passed from main.py.
+- EnvStep replaces the old Timestep column and remains episode-local.
+- episode_idx replaces the old Episodes column.
+- global_timestep is derived from env.time.overall_timesteps, which is maintained by the environment and increments once per env.step().
+- padded is False for real recorded rows and True for compatibility padding rows.
+
+Compatibility notes
+- Buffering and flushing are unchanged. Rows are still buffered in memory and flushed through flush_escaped_counts(), including the WALK_DIAGRAM_LOGGING_FREQUENCY-based flush cadence and close() flush.
+- The code still pads short episodes to MAX_TIMESTEPS for existing analysis compatibility, but padded rows are now explicit.
+- Existing escaped_counts.csv files with the old header will not have the same columns as newly appended rows. For clean analysis, start a new CSV file or handle both schemas in downstream scripts.
+- No W&B behavior was added.
+- Environment dynamics, rewards, observations, and training behavior were not changed.

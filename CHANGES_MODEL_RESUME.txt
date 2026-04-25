@@ -1,0 +1,59 @@
+Stable-Baselines3 checkpointing and resume
+
+Files changed
+- src/params.py
+- src/utils.py
+- main.py
+- CHANGES_MODEL_RESUME.txt
+
+New CLI args
+- --checkpoint-frequency-timesteps
+  - Default: params.CHECKPOINT_FREQUENCY_TIMESTEPS
+  - Current default value: 100000
+  - Controls Stable-Baselines3 CheckpointCallback save_freq.
+
+- --load-model-path
+  - Default: None
+  - When provided, main.py resumes with:
+    PPO.load(args.load_model_path, env=env, device=args.device)
+  - When omitted, main.py creates a fresh PPO model as before.
+
+Where checkpoints are saved
+- Periodic checkpoints are saved under:
+  saved_data/models/checkpoints/
+- Checkpoint names use the experiment name as the CheckpointCallback name_prefix.
+- Stable-Baselines3 appends the timestep suffix to checkpoint files.
+
+Fresh training command
+
+cd /mnt/c/Users/marco/Projects/Evacuationwalls
+python main.py
+
+Fresh training with a custom checkpoint interval
+
+cd /mnt/c/Users/marco/Projects/Evacuationwalls
+python main.py --checkpoint-frequency-timesteps 50000
+
+Resume training command
+
+cd /mnt/c/Users/marco/Projects/Evacuationwalls
+python main.py --load-model-path saved_data/models/checkpoints/<checkpoint_file>.zip
+
+Resume training with explicit timesteps
+
+cd /mnt/c/Users/marco/Projects/Evacuationwalls
+python main.py --load-model-path saved_data/models/checkpoints/<checkpoint_file>.zip --learn-timesteps 1000000
+
+Behavior notes
+- On resume, main.py calls model.learn(..., reset_num_timesteps=False).
+- On fresh training, main.py calls model.learn(..., reset_num_timesteps=True) through the same boolean expression.
+- The final model is still saved at the end to:
+  saved_data/models/{experiment_name}.zip
+- Existing env.close() final logging flush remains in a finally block around learning.
+
+Remaining limitations
+- Resume is implemented only for the Stable-Baselines3 PPO path in main.py.
+- --origin is still present, but loading always uses PPO.load as requested.
+- No CLI option was added for the checkpoint directory.
+- CheckpointCallback saves model checkpoints, but no separate VecNormalize stats, replay buffer, or custom metadata are saved.
+- If training is interrupted, the final end-of-training model save after learn() may not run; use the latest periodic checkpoint for recovery.
