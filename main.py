@@ -1,4 +1,6 @@
 import os
+import csv
+import re
 import numpy as np
 from gymnasium.wrappers import FrameStack, FlattenObservation
 from stable_baselines3 import PPO
@@ -12,9 +14,40 @@ from src import params
 from src.utils import get_experiment_name, parse_args
 #print("something4")
 
+RUN_ID_PATTERN = re.compile(r"\d{18}_[0-9a-f]{6}")
+
+
+def infer_parent_run_id(load_model_path):
+    if not load_model_path:
+        return None
+
+    match = RUN_ID_PATTERN.search(load_model_path)
+    if match:
+        return match.group(0)
+
+    if not os.path.exists('runs.csv'):
+        return None
+
+    parent_run_id = None
+    best_match_length = 0
+    normalized_model_path = load_model_path.replace('\\', '/').replace(os.sep, '/')
+    with open('runs.csv', newline='') as f:
+        for row in csv.DictReader(f):
+            run_id = row.get('run_id')
+            experiment_name = row.get('experiment_name')
+            if not run_id or not experiment_name:
+                continue
+            if experiment_name in normalized_model_path and len(experiment_name) >= best_match_length:
+                parent_run_id = run_id
+                best_match_length = len(experiment_name)
+
+    return parent_run_id
+
+
 def build_run_metadata(args, experiment_name):
     return {
         "experiment_name": experiment_name,
+        "parent_run_id": infer_parent_run_id(args.load_model_path),
         "origin": args.origin,
         "learn_timesteps": args.learn_timesteps,
         "learning_rate": args.learning_rate,

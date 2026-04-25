@@ -15,6 +15,7 @@ Old runs.csv schema
 New runs.csv schema
 - run_id
 - experiment_name
+- parent_run_id
 - timestamp
 - origin
 - learn_timesteps
@@ -43,6 +44,18 @@ New runs.csv schema
 - alpha
 - checkpoint_frequency_timesteps
 - load_model_path
+
+parent_run_id
+- Fresh runs write an empty parent_run_id.
+- Resume runs keep their own new run_id and write parent_run_id when it can be inferred.
+- The parent is detected from --load-model-path by first looking for a run_id in the path, then by matching the path against experiment_name values already present in runs.csv.
+- If no parent can be determined, parent_run_id is left empty for backward compatibility.
+
+Lineage tracking
+- runs.csv can be treated as a directed graph.
+- run_id identifies the current run.
+- parent_run_id points to the run that produced the loaded model or checkpoint.
+- This keeps resumed runs traceable without merging their time-series rows under the original run_id.
 
 escaped_counts.csv schema
 - run_id

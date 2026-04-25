@@ -1870,6 +1870,7 @@ class EvacuationEnv(gym.Env):
         self.max_timesteps = max_timesteps
         self.run_metadata = {
             "experiment_name": experiment_name,
+            "parent_run_id": None,
             "origin": None,
             "learn_timesteps": None,
             "learning_rate": learning_rate,
@@ -1913,6 +1914,7 @@ class EvacuationEnv(gym.Env):
         columns = [
             'run_id',
             'experiment_name',
+            'parent_run_id',
             'timestamp',
             'origin',
             'learn_timesteps',
