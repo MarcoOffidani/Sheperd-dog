@@ -1,7 +1,7 @@
-print("init1")
+#print("init1")
 from . import constants
-print("init2")
+#print("init2")
 from .env import EvacuationEnv
-print("init3")
+#print("init3")
 from .wrappers import *
-print("init4")
+#print("init4")

@@ -1,14 +1,14 @@
 import os
 import numpy as np
-print("env1.12")
+#print("env1.12")
 import gymnasium as gym
-print("envgym")
+#print("envgym")
 from gymnasium import spaces
 import logging; log = logging.getLogger(__name__)
-print("log")
+#print("log")
 import pandas as pd
 from scipy.spatial import distance_matrix
-print("env2")
+#print("env2")
 import matplotlib
 matplotlib.use("Agg") #chatgpt added this
 from matplotlib.animation import PillowWriter #chatgpt added this 
@@ -19,7 +19,7 @@ import matplotlib as mpl
 mpl.use("Agg") #chatgpt added this
 from functools import reduce
 from enum import Enum, auto
-print("env3")
+#print("env3")
 from src.env import constants
 from src.params import WALK_DIAGRAM_LOGGING_FREQUENCY
 
@@ -1768,7 +1768,7 @@ class Area:
 
 
 class EvacuationEnv(gym.Env):
-    print("env1")
+    #print("env1")
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     """
@@ -1812,7 +1812,7 @@ class EvacuationEnv(gym.Env):
         
         ) -> None:
         super(EvacuationEnv, self).__init__()
-        print("initenv")
+        #print("initenv")
         # setup env
         self.pedestrians = Pedestrians(num=number_of_pedestrians)
         

@@ -3,13 +3,13 @@ import numpy as np
 from gymnasium.wrappers import FrameStack, FlattenObservation
 from stable_baselines3 import PPO
 import wandb
-print("something")
+#print("something")
 from src.env import EvacuationEnv, RelativePosition, constants
-print("something2")
+#print("something2")
 from src import params
-print("something3")
+#print("something3")
 from src.utils import get_experiment_name, parse_args
-print("something4")
+#print("something4")
 
 def setup_env(args, experiment_name):
     env = EvacuationEnv(
