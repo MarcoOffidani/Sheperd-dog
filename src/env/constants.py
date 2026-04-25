@@ -31,7 +31,7 @@ N_TIMESTEPS = 0                             # ! number of timesteps already done
 # Gravity embedding params
 ENABLED_GRAVITY_EMBEDDING = True            # ! if True use gravity embedding
 ENABLED_GRAVITY_AND_SPEED_EMBEDDING = False 
-ALPHA = 3                                   # ! parameter of gradient state
+ALPHA = 1                                   # ! parameter of gradient state
 
 SWITCH_DISTANCE_TO_LEADER = 0.2             # radius of catch by leader
 SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.1   # SWITCH_DISTANCE_TO_LEADER
