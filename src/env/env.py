@@ -1856,6 +1856,7 @@ class EvacuationEnv(gym.Env):
         # drawing
         self.draw = draw
         self.save_next_episode_anim = False
+        self.escaped_counts_buffer = []
         log.info(f'Env {self.experiment_name} is initialized.')        
         
     def _get_observation_space(self):        
@@ -2121,13 +2122,21 @@ class EvacuationEnv(gym.Env):
             last_value = escaped_counts[-1] if escaped_counts else (0, 0, self.time.n_episodes, constants.NUM_PEDESTRIANS)
             escaped_counts.extend([last_value] * (constants.MAX_TIMESTEPS - len(escaped_counts)))
 
-        # Convert the list of tuples to a DataFrame
-        df = pd.DataFrame(escaped_counts, columns=['Timestep', 'EscapedCount', 'Episodes', 'TotalPedestrians'])
+        self.escaped_counts_buffer.extend(escaped_counts)
+        if self.time.n_episodes % WALK_DIAGRAM_LOGGING_FREQUENCY == 0:
+            self.flush_escaped_counts()
 
-        # Save to CSV with the capability to append without duplicating headers
+    def flush_escaped_counts(self):
+        if not self.escaped_counts_buffer:
+            return
+
+        df = pd.DataFrame(
+            self.escaped_counts_buffer,
+            columns=['Timestep', 'EscapedCount', 'Episodes', 'TotalPedestrians']
+        )
         with open('escaped_counts.csv', 'a') as f:
             df.to_csv(f, header=f.tell()==0, index=False)
-
+        self.escaped_counts_buffer.clear()
         print("Data appended to 'escaped_counts.csv'")
 
     def save_animation(self):
@@ -2436,7 +2445,7 @@ class EvacuationEnv(gym.Env):
             self.draw = False
 
     def close(self):
-        pass
+        self.flush_escaped_counts()
     
     def seed(self, seed=None):
         from gym.utils.seeding import np_random

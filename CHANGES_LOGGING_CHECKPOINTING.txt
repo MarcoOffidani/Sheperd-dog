@@ -1,0 +1,75 @@
+Logging and checkpointing cleanup
+
+Files changed
+- src/env/env.py
+- main.py
+
+Old behavior
+- GIFs were scheduled every WALK_DIAGRAM_LOGGING_FREQUENCY episodes in EvacuationEnv.reset().
+- GIFs were written at episode termination/truncation by EvacuationEnv.save_animation() when self.draw was true.
+- escaped_counts.csv was written immediately at the end of every episode from EvacuationEnv.step(), via EvacuationEnv.save_data().
+- save_data() rebuilt the current episode's per-timestep escaped-count rows from self.pedestrians.memory['statuses'], padded them to constants.MAX_TIMESTEPS, converted them to a DataFrame, and appended them directly to escaped_counts.csv.
+- There was no cross-episode CSV buffer.
+- EvacuationEnv.close() was a no-op, so there was no final CSV flush hook.
+
+New behavior
+- GIF cadence is unchanged.
+- WALK_DIAGRAM_LOGGING_FREQUENCY is now also the CSV flush cadence.
+- escaped-count rows are still collected for every episode.
+- save_data() now appends each episode's rows to self.escaped_counts_buffer.
+- CSV is written only when self.time.n_episodes % WALK_DIAGRAM_LOGGING_FREQUENCY == 0.
+- EvacuationEnv.close() flushes any remaining buffered rows.
+- main.py wraps model.learn(...) in try/finally and calls env.close() so buffered CSV rows are flushed when training exits, including interrupted/exception exits that unwind through finally.
+
+How often GIFs are saved
+- Every WALK_DIAGRAM_LOGGING_FREQUENCY episodes.
+- Current value: WALK_DIAGRAM_LOGGING_FREQUENCY = 100 in src/params.py.
+- Implementation: EvacuationEnv.reset() sets self.draw and self.save_next_episode_anim for the scheduled episode, and EvacuationEnv.step() calls save_animation() at episode termination/truncation when self.draw is true.
+
+How often CSV is written
+- Every WALK_DIAGRAM_LOGGING_FREQUENCY completed episodes.
+- Current value: every 100 episodes.
+- The final partial buffer is also written when env.close() runs at training end.
+
+Does CSV still contain all episodes?
+- Yes, as long as training reaches normal end or exits through the try/finally in main.py.
+- Every episode still calls save_data() at termination/truncation.
+- save_data() buffers the full padded per-timestep escaped-count history for that episode.
+- The CSV write is delayed, not skipped.
+
+How final buffer flushing works
+- EvacuationEnv.close() calls flush_escaped_counts().
+- flush_escaped_counts() returns immediately if the buffer is empty.
+- If the buffer has rows, it appends them to escaped_counts.csv with the same columns:
+  Timestep, EscapedCount, Episodes, TotalPedestrians
+- After a successful write, the in-memory buffer is cleared.
+- main.py now guarantees env.close() after model.learn(...) by using try/finally.
+
+Model saving/loading inspection
+
+Current final model save
+- main.py saves the Stable-Baselines3 model once after learning:
+  model.save(os.path.join(params.SAVE_PATH_MODELS, f"{experiment_name}.zip"))
+- SAVE_PATH_MODELS is defined in src/params.py:
+  SAVE_PATH_MODELS = 'saved_data/models'
+
+Periodic checkpointing
+- Missing for the Stable-Baselines3 main.py path.
+- There is no CheckpointCallback, save_freq, or periodic model.save() call in main.py.
+- src/trainer.py has custom Torch best-model saving for the custom Trainer/RLAgent path, but that is separate from the current Stable-Baselines3 PPO main.py path.
+
+Resume from checkpoint
+- Missing/broken for the Stable-Baselines3 main.py path.
+- main.py only has a commented placeholder:
+  #model.load('11may.zip') #remove .for training
+- run.py calls model.load(...) without assigning the returned model, so it does not actually replace the model instance.
+- main_a2c.py assigns model = model.load(...), but it is an ad hoc script and does not implement normal resumed training.
+
+Minimal future change for resume/checkpointing
+- Add a CLI option such as --load-model-path.
+- If provided, create the model with:
+  model = PPO.load(args.load_model_path, env=env, device=args.device)
+- Continue training with:
+  model.learn(args.learn_timesteps, tb_log_name=experiment_name, reset_num_timesteps=False)
+- Add Stable-Baselines3 CheckpointCallback to model.learn(...) for periodic checkpointing.
+- These model changes were not implemented in this cleanup.

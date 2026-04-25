@@ -103,7 +103,10 @@ if __name__ == "__main__":
     model = setup_model(args, env)
     #model.load('11may.zip') #remove .for training
     #model.learning_rate = 0.0
-    model.learn(args.learn_timesteps, tb_log_name=experiment_name) 
+    try:
+        model.learn(args.learn_timesteps, tb_log_name=experiment_name)
+    finally:
+        env.close()
  
 
     model.save(os.path.join(params.SAVE_PATH_MODELS, f"{experiment_name}.zip"))
