@@ -1,46 +1,71 @@
 Run metadata CSV schema update
 
-Old schema
-- escaped_counts.csv columns:
-  - experiment_name
-  - EnvStep
-  - global_timestep
-  - EscapedCount
-  - episode_idx
-  - TotalPedestrians
-  - padded
-- The full experiment_name was repeated in every per-step row.
-
-New escaped_counts.csv schema
-- Columns:
-  - run_id
-  - EnvStep
-  - global_timestep
-  - EscapedCount
-  - episode_idx
-  - TotalPedestrians
-  - padded
-- run_id is a short identifier derived from the run timestamp plus a short hash of experiment_name.
-- Buffering and flushing are unchanged. escaped_counts.csv rows still use escaped_counts_buffer and flush_escaped_counts().
+Old runs.csv schema
+- run_id
+- experiment_name
+- alpha
+- learning_rate
+- gamma
+- noise_coef
+- step_size
+- number_of_pedestrians
+- max_timesteps
+- timestamp
 
 New runs.csv schema
-- Columns:
-  - run_id
-  - experiment_name
-  - alpha
-  - learning_rate
-  - gamma
-  - noise_coef
-  - step_size
-  - number_of_pedestrians
-  - max_timesteps
-  - timestamp
-- runs.csv is appended once when EvacuationEnv is initialized.
+- run_id
+- experiment_name
+- timestamp
+- origin
+- learn_timesteps
+- learning_rate
+- gamma
+- device
+- number_of_pedestrians
+- width
+- height
+- step_size
+- noise_coef
+- num_obs_stacks
+- use_relative_positions
+- deactivate_walls
+- enslaving_degree
+- is_new_exiting_reward
+- is_new_followers_reward
+- intrinsic_reward_coef
+- is_termination_agent_wall_collision
+- init_reward_each_step
+- max_timesteps
+- n_episodes
+- n_timesteps
+- enabled_gravity_embedding
+- enabled_gravity_embedding_speed
+- alpha
+- checkpoint_frequency_timesteps
+- load_model_path
 
-How run_id links the files
-- escaped_counts.csv stores run_id on every per-step row.
-- runs.csv stores one metadata row per run_id.
-- Join escaped_counts.csv to runs.csv on run_id to recover the full experiment_name and run parameters without repeating them in every escaped_counts.csv row.
+escaped_counts.csv schema
+- run_id
+- EnvStep
+- global_timestep
+- EscapedCount
+- episode_idx
+- TotalPedestrians
+- padded
+
+Why static metadata lives in runs.csv
+- Static run parameters are written once per run_id in runs.csv.
+- This keeps runs.csv as the source of truth for run configuration and avoids repeating long or mostly constant values on every time-series row.
+
+Why escaped_counts.csv stays narrow
+- escaped_counts.csv contains only per-step evacuation counts plus run_id.
+- Join escaped_counts.csv to runs.csv on run_id to recover experiment_name and all static parameters.
+- Buffering and flushing are unchanged; escaped_counts.csv still uses escaped_counts_buffer and flush_escaped_counts().
+
+Compatibility notes
+- Existing runs.csv files with the old header have fewer columns than the new schema.
+- Existing escaped_counts.csv files from the previous run_id schema remain compatible with the new escaped_counts.csv schema.
+- Older escaped_counts.csv files that used experiment_name instead of run_id need separate handling or regeneration.
 
 Files changed
 - main.py

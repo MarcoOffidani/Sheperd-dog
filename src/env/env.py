@@ -1816,6 +1816,7 @@ class EvacuationEnv(gym.Env):
         # logging params
         learning_rate=None,
         gamma=None,
+        run_metadata=None,
         verbose=False,
         render_mode=None,
         draw=False
@@ -1863,12 +1864,42 @@ class EvacuationEnv(gym.Env):
         self.experiment_name = experiment_name
         self.run_timestamp = datetime.now().isoformat(timespec="microseconds")
         self.run_id = make_run_id(experiment_name, self.run_timestamp)
-        self.learning_rate = learning_rate
-        self.gamma = gamma
         self.noise_coef = noise_coef
         self.step_size = step_size
         self.number_of_pedestrians = number_of_pedestrians
         self.max_timesteps = max_timesteps
+        self.run_metadata = {
+            "experiment_name": experiment_name,
+            "origin": None,
+            "learn_timesteps": None,
+            "learning_rate": learning_rate,
+            "gamma": gamma,
+            "device": None,
+            "number_of_pedestrians": number_of_pedestrians,
+            "width": width,
+            "height": height,
+            "step_size": step_size,
+            "noise_coef": noise_coef,
+            "num_obs_stacks": None,
+            "use_relative_positions": None,
+            "deactivate_walls": constants.DEACTIVATE_WALLS,
+            "enslaving_degree": enslaving_degree,
+            "is_new_exiting_reward": is_new_exiting_reward,
+            "is_new_followers_reward": is_new_followers_reward,
+            "intrinsic_reward_coef": intrinsic_reward_coef,
+            "is_termination_agent_wall_collision": is_termination_agent_wall_collision,
+            "init_reward_each_step": init_reward_each_step,
+            "max_timesteps": max_timesteps,
+            "n_episodes": n_episodes,
+            "n_timesteps": n_timesteps,
+            "enabled_gravity_embedding": enabled_gravity_embedding,
+            "enabled_gravity_embedding_speed": enabled_gravity_and_speed_embedding,
+            "alpha": alpha,
+            "checkpoint_frequency_timesteps": None,
+            "load_model_path": None,
+        }
+        if run_metadata:
+            self.run_metadata.update(run_metadata)
         setup_logging(verbose, experiment_name)
         self.save_run_metadata()
 
@@ -1879,31 +1910,46 @@ class EvacuationEnv(gym.Env):
         log.info(f'Env {self.experiment_name} is initialized.')        
 
     def save_run_metadata(self):
+        columns = [
+            'run_id',
+            'experiment_name',
+            'timestamp',
+            'origin',
+            'learn_timesteps',
+            'learning_rate',
+            'gamma',
+            'device',
+            'number_of_pedestrians',
+            'width',
+            'height',
+            'step_size',
+            'noise_coef',
+            'num_obs_stacks',
+            'use_relative_positions',
+            'deactivate_walls',
+            'enslaving_degree',
+            'is_new_exiting_reward',
+            'is_new_followers_reward',
+            'intrinsic_reward_coef',
+            'is_termination_agent_wall_collision',
+            'init_reward_each_step',
+            'max_timesteps',
+            'n_episodes',
+            'n_timesteps',
+            'enabled_gravity_embedding',
+            'enabled_gravity_embedding_speed',
+            'alpha',
+            'checkpoint_frequency_timesteps',
+            'load_model_path'
+        ]
+        row = {
+            'run_id': self.run_id,
+            'timestamp': self.run_timestamp,
+            **self.run_metadata
+        }
         df = pd.DataFrame(
-            [(
-                self.run_id,
-                self.experiment_name,
-                self.alpha,
-                self.learning_rate,
-                self.gamma,
-                self.noise_coef,
-                self.step_size,
-                self.number_of_pedestrians,
-                self.max_timesteps,
-                self.run_timestamp
-            )],
-            columns=[
-                'run_id',
-                'experiment_name',
-                'alpha',
-                'learning_rate',
-                'gamma',
-                'noise_coef',
-                'step_size',
-                'number_of_pedestrians',
-                'max_timesteps',
-                'timestamp'
-            ]
+            [[row.get(column) for column in columns]],
+            columns=columns
         )
         with open('runs.csv', 'a') as f:
             df.to_csv(f, header=f.tell()==0, index=False)

@@ -12,6 +12,39 @@ from src import params
 from src.utils import get_experiment_name, parse_args
 #print("something4")
 
+def build_run_metadata(args, experiment_name):
+    return {
+        "experiment_name": experiment_name,
+        "origin": args.origin,
+        "learn_timesteps": args.learn_timesteps,
+        "learning_rate": args.learning_rate,
+        "gamma": args.gamma,
+        "device": args.device,
+        "number_of_pedestrians": args.number_of_pedestrians,
+        "width": args.width,
+        "height": args.height,
+        "step_size": args.step_size,
+        "noise_coef": args.noise_coef,
+        "num_obs_stacks": args.num_obs_stacks,
+        "use_relative_positions": args.use_relative_positions,
+        "deactivate_walls": args.deactivate_walls,
+        "enslaving_degree": args.enslaving_degree,
+        "is_new_exiting_reward": args.is_new_exiting_reward,
+        "is_new_followers_reward": args.is_new_followers_reward,
+        "intrinsic_reward_coef": args.intrinsic_reward_coef,
+        "is_termination_agent_wall_collision": args.is_termination_agent_wall_collision,
+        "init_reward_each_step": args.init_reward_each_step,
+        "max_timesteps": args.max_timesteps,
+        "n_episodes": args.n_episodes,
+        "n_timesteps": args.n_timesteps,
+        "enabled_gravity_embedding": args.enabled_gravity_embedding,
+        "enabled_gravity_embedding_speed": args.enabled_gravity_embedding_speed,
+        "alpha": args.alpha,
+        "checkpoint_frequency_timesteps": args.checkpoint_frequency_timesteps,
+        "load_model_path": args.load_model_path,
+    }
+
+
 def setup_env(args, experiment_name):
     env = EvacuationEnv(
         experiment_name=experiment_name,
@@ -31,8 +64,7 @@ def setup_env(args, experiment_name):
         enabled_gravity_embedding=args.enabled_gravity_embedding,
         enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
         alpha=args.alpha,
-        learning_rate=args.learning_rate,
-        gamma=args.gamma,
+        run_metadata=build_run_metadata(args, experiment_name),
         verbose=args.verbose,
         render_mode=None,
         draw=args.draw

@@ -16,6 +16,7 @@ wandb/
 .idea/
 # Local outputs / artifacts
 escaped_counts.csv
+runs.csv
 analysis.txt
 analyssis_expanded.txt.vscode/
 __pycache__/
