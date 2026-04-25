@@ -1,0 +1,48 @@
+Run metadata CSV schema update
+
+Old schema
+- escaped_counts.csv columns:
+  - experiment_name
+  - EnvStep
+  - global_timestep
+  - EscapedCount
+  - episode_idx
+  - TotalPedestrians
+  - padded
+- The full experiment_name was repeated in every per-step row.
+
+New escaped_counts.csv schema
+- Columns:
+  - run_id
+  - EnvStep
+  - global_timestep
+  - EscapedCount
+  - episode_idx
+  - TotalPedestrians
+  - padded
+- run_id is a short identifier derived from the run timestamp plus a short hash of experiment_name.
+- Buffering and flushing are unchanged. escaped_counts.csv rows still use escaped_counts_buffer and flush_escaped_counts().
+
+New runs.csv schema
+- Columns:
+  - run_id
+  - experiment_name
+  - alpha
+  - learning_rate
+  - gamma
+  - noise_coef
+  - step_size
+  - number_of_pedestrians
+  - max_timesteps
+  - timestamp
+- runs.csv is appended once when EvacuationEnv is initialized.
+
+How run_id links the files
+- escaped_counts.csv stores run_id on every per-step row.
+- runs.csv stores one metadata row per run_id.
+- Join escaped_counts.csv to runs.csv on run_id to recover the full experiment_name and run parameters without repeating them in every escaped_counts.csv row.
+
+Files changed
+- main.py
+- src/env/env.py
+- CHANGES_RUN_METADATA.txt

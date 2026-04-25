@@ -1,4 +1,6 @@
 import os
+import hashlib
+from datetime import datetime
 import numpy as np
 #print("env1.12")
 import gymnasium as gym
@@ -40,6 +42,12 @@ def setup_logging(verbose: bool, experiment_name: str) -> None:
         format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.DEBUG if verbose else logging.INFO
     )
+
+
+def make_run_id(experiment_name: str, timestamp: str) -> str:
+    digest = hashlib.sha1(f"{experiment_name}:{timestamp}".encode("utf-8")).hexdigest()[:6]
+    compact_timestamp = datetime.fromisoformat(timestamp).strftime("%y%m%d%H%M%S%f")
+    return f"{compact_timestamp}_{digest}"
 
 
 class UserEnum(Enum):
@@ -1806,6 +1814,8 @@ class EvacuationEnv(gym.Env):
         alpha=constants.ALPHA,
         
         # logging params
+        learning_rate=None,
+        gamma=None,
         verbose=False,
         render_mode=None,
         draw=False
@@ -1851,13 +1861,52 @@ class EvacuationEnv(gym.Env):
         # logging
         self.render_mode = render_mode
         self.experiment_name = experiment_name
+        self.run_timestamp = datetime.now().isoformat(timespec="microseconds")
+        self.run_id = make_run_id(experiment_name, self.run_timestamp)
+        self.learning_rate = learning_rate
+        self.gamma = gamma
+        self.noise_coef = noise_coef
+        self.step_size = step_size
+        self.number_of_pedestrians = number_of_pedestrians
+        self.max_timesteps = max_timesteps
         setup_logging(verbose, experiment_name)
+        self.save_run_metadata()
 
         # drawing
         self.draw = draw
         self.save_next_episode_anim = False
         self.escaped_counts_buffer = []
         log.info(f'Env {self.experiment_name} is initialized.')        
+
+    def save_run_metadata(self):
+        df = pd.DataFrame(
+            [(
+                self.run_id,
+                self.experiment_name,
+                self.alpha,
+                self.learning_rate,
+                self.gamma,
+                self.noise_coef,
+                self.step_size,
+                self.number_of_pedestrians,
+                self.max_timesteps,
+                self.run_timestamp
+            )],
+            columns=[
+                'run_id',
+                'experiment_name',
+                'alpha',
+                'learning_rate',
+                'gamma',
+                'noise_coef',
+                'step_size',
+                'number_of_pedestrians',
+                'max_timesteps',
+                'timestamp'
+            ]
+        )
+        with open('runs.csv', 'a') as f:
+            df.to_csv(f, header=f.tell()==0, index=False)
         
     def _get_observation_space(self):        
         observation_space = {
@@ -2118,24 +2167,24 @@ class EvacuationEnv(gym.Env):
             escaped_count = np.sum(status == Status.ESCAPED)
             global_timestep = first_global_timestep + env_step
             escaped_counts.append((
-                self.experiment_name,
+                self.run_id,
                 env_step,
                 global_timestep,
                 escaped_count,
                 self.time.n_episodes,
-                constants.NUM_PEDESTRIANS,
+                self.number_of_pedestrians,
                 False
             ))
 
         # Ensure output is from 0 to MAX_TIMESTEPS
         if len(escaped_counts) < constants.MAX_TIMESTEPS:
             last_value = escaped_counts[-1] if escaped_counts else (
-                self.experiment_name,
+                self.run_id,
                 0,
                 self.time.overall_timesteps,
                 0,
                 self.time.n_episodes,
-                constants.NUM_PEDESTRIANS,
+                self.number_of_pedestrians,
                 False
             )
             padded_value = (*last_value[:-1], True)
@@ -2152,7 +2201,7 @@ class EvacuationEnv(gym.Env):
         df = pd.DataFrame(
             self.escaped_counts_buffer,
             columns=[
-                'experiment_name',
+                'run_id',
                 'EnvStep',
                 'global_timestep',
                 'EscapedCount',

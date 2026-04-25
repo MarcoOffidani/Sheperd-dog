@@ -31,6 +31,8 @@ def setup_env(args, experiment_name):
         enabled_gravity_embedding=args.enabled_gravity_embedding,
         enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
         alpha=args.alpha,
+        learning_rate=args.learning_rate,
+        gamma=args.gamma,
         verbose=args.verbose,
         render_mode=None,
         draw=args.draw
