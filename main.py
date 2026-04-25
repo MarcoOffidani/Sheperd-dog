@@ -28,7 +28,7 @@ def setup_env(args, experiment_name):
         n_episodes=args.n_episodes,
         n_timesteps=args.n_timesteps,
         enabled_gravity_embedding=args.enabled_gravity_embedding,
-        #enabled_gravity_and_speed_embedding=args.enabled_gravity_and_speed_embedding,
+        enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
         alpha=args.alpha,
         verbose=args.verbose,
         render_mode=None,

@@ -26,7 +26,7 @@ def parse_args(inline_mode=False, request=""):
         choices=['ppo', 'a2c', 'sac'], help="which model to use")
     model_params.add_argument('--learn-timesteps', type=int, default=5_000_000,
         help='number of timesteps to learn the model')
-    model_params.add_argument('--learning-rate', type=float, default=0.0003,
+    model_params.add_argument('--learning-rate', type=float, default=0.0005,
         help='learning rate for stable baselines ppo model')
     model_params.add_argument('--gamma', type=float, default=0.99,
         help='gammma for stable baselines ppo model')
@@ -57,6 +57,7 @@ def parse_args(inline_mode=False, request=""):
     env_params.add_argument('-rel', '--use-relative-positions', type=str2bool, default=constants.USE_RELATIVE_POSITIONS,
         help="add relative positions wrapper (can be use only WITHOUT gravity embedding)")
     env_params.add_argument('--deactivate-walls', action='store_true',
+        default=constants.DEACTIVATE_WALLS,
         help="disable internal walls logic/drawing/interactions (external boundaries remain active)")
     
     leader_params = parser.add_argument_group('leader params')

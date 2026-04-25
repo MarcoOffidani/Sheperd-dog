@@ -253,13 +253,15 @@ class Reward:
         is_new_exiting_reward: bool,
         is_new_followers_reward: bool,
         is_termination_agent_wall_collision: bool,
-        init_reward_each_step: float
+        init_reward_each_step: float,
+        max_timesteps: int
         ) -> None:
         
         self.init_reward_each_step = init_reward_each_step
         self.is_new_exiting_reward = is_new_exiting_reward
         self.is_new_followers_reward = is_new_followers_reward
         self.is_termination_agent_wall_collision = is_termination_agent_wall_collision
+        self.max_timesteps = max_timesteps
 
     def estimate_intrinsic_reward(self, pedestrians_positions, exit_position):
         """This is intrinsic reward, which is given to the agent at each step"""
@@ -268,11 +270,11 @@ class Reward:
     def estimate_status_reward(self, old_statuses, new_statuses, timesteps, num_pedestrians):
         """This reward is based on how pedestrians update their status
         
-        VISCEK or FOLLOWER --> EXITING  :  (15 +  5 * time_factor)
-        VISCEK             --> FOLLOWER :  (10 + 10 * time_factor)
+        VISCEK or FOLLOWER --> EXITING  :  (15 + 10 * time_factor)
+        VISCEK             --> FOLLOWER :  (10 +  5 * time_factor)
         """
         reward = self.init_reward_each_step
-        time_factor = 1 - timesteps / (200 * num_pedestrians)
+        time_factor = 1 - timesteps / self.max_timesteps
 
         # Reward for new exiting €€€ distinguie viscek from pedestrian
         if self.is_new_exiting_reward:
@@ -1818,7 +1820,8 @@ class EvacuationEnv(gym.Env):
             is_new_exiting_reward=is_new_exiting_reward,
             is_new_followers_reward=is_new_followers_reward,
             is_termination_agent_wall_collision=is_termination_agent_wall_collision,
-            init_reward_each_step=init_reward_each_step)        
+            init_reward_each_step=init_reward_each_step,
+            max_timesteps=max_timesteps)        
         
         self.area = Area(
             reward=reward, 

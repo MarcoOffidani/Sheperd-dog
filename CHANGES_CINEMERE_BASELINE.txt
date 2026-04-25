@@ -1,0 +1,228 @@
+Cinemere baseline update for Evacuationwalls
+
+Files changed
+1. src/env/constants.py
+2. src/params.py
+3. src/utils.py
+4. src/env/env.py
+5. main.py
+
+Changed lines / blocks
+
+File: src/env/constants.py
+
+Old:
+NUM_PEDESTRIANS = 200                     # ! number of pedestrians
+New:
+NUM_PEDESTRIANS = 60                      # ! number of pedestrians
+Reason:
+Set the default population to the Cinemere paper baseline.
+
+Old:
+ENSLAVING_DEGREE = 0.8                      # ! leader's enslaving degree
+New:
+ENSLAVING_DEGREE = 1.0                    # ! leader's enslaving degree
+Reason:
+Use full leader influence by default for the baseline.
+
+Old:
+INTRINSIC_REWARD_COEF = 1.                  # ! coef of intrinsic reward
+IS_NEW_EXITING_REWARD = True                # ! if enable reward for new exiting
+IS_NEW_FOLLOWERS_REWARD = True              # ! if enable reward for new followers
+INIT_REWARD_EACH_STEP = 0.                  # ! each step give this reward
+New:
+INTRINSIC_REWARD_COEF = 0.                  # ! coef of intrinsic reward
+IS_NEW_EXITING_REWARD = True                # ! if enable reward for new exiting
+IS_NEW_FOLLOWERS_REWARD = False             # ! if enable reward for new followers
+INIT_REWARD_EACH_STEP = -1.                 # ! each step give this reward
+Reason:
+Match the paper reward: R_t = -1 + (15 + 10 * tau) * newly_exiting_pedestrians, with no follower reward and no intrinsic reward.
+
+Old:
+ALPHA = 5 #2                                   # ! parameter of gradient state
+New:
+ALPHA = 3                                   # ! parameter of gradient state
+Reason:
+Set pseudo-gravitational encoding alpha to the paper value.
+
+Old:
+SWITCH_DISTANCE_TO_LEADER = 0.1             # radius of catch by leader
+SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.05   # SWITCH_DISTANCE_TO_LEADER
+SWITCH_DISTANCE_TO_EXIT   = 0.2
+SWITCH_DISTANCE_TO_ESCAPE = 0.01
+New:
+SWITCH_DISTANCE_TO_LEADER = 0.2             # radius of catch by leader
+SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.1   # SWITCH_DISTANCE_TO_LEADER
+SWITCH_DISTANCE_TO_EXIT   = 0.4
+SWITCH_DISTANCE_TO_ESCAPE = 0.01
+Reason:
+Set leader radius, Vicsek radius, exit zone radius, and evacuation destination radius to the paper baseline.
+
+Old:
+DEACTIVATE_WALLS = False
+New:
+DEACTIVATE_WALLS = True
+Reason:
+Disable internal walls by default for the no-walls paper baseline.
+
+Unchanged baseline values already matching the paper:
+WIDTH = 1.
+HEIGHT = 1.
+STEP_SIZE = 0.01
+NOISE_COEF = 0.2
+MAX_TIMESTEPS = int(2e3)
+ENABLED_GRAVITY_EMBEDDING = True
+ENABLED_GRAVITY_AND_SPEED_EMBEDDING = False
+
+File: src/params.py
+
+Old:
+DEVICE = "cuda"
+New:
+DEVICE = "cpu"
+Reason:
+Make Stable-Baselines3 PPO use CPU by default.
+
+File: src/utils.py
+
+Old:
+model_params.add_argument('--learning-rate', type=float, default=0.0003,
+New:
+model_params.add_argument('--learning-rate', type=float, default=0.0005,
+Reason:
+Set the default PPO learning rate to the paper baseline.
+
+Old:
+env_params.add_argument('--deactivate-walls', action='store_true',
+    help="disable internal walls logic/drawing/interactions (external boundaries remain active)")
+New:
+env_params.add_argument('--deactivate-walls', action='store_true',
+    default=constants.DEACTIVATE_WALLS,
+    help="disable internal walls logic/drawing/interactions (external boundaries remain active)")
+Reason:
+Preserve the existing CLI flag while allowing the no-walls default from constants.py to take effect when no CLI flag is provided.
+
+File: src/env/env.py
+
+Old:
+class Reward:
+    def __init__(self,
+        is_new_exiting_reward: bool,
+        is_new_followers_reward: bool,
+        is_termination_agent_wall_collision: bool,
+        init_reward_each_step: float
+        ) -> None:
+
+        self.init_reward_each_step = init_reward_each_step
+        self.is_new_exiting_reward = is_new_exiting_reward
+        self.is_new_followers_reward = is_new_followers_reward
+        self.is_termination_agent_wall_collision = is_termination_agent_wall_collision
+New:
+class Reward:
+    def __init__(self,
+        is_new_exiting_reward: bool,
+        is_new_followers_reward: bool,
+        is_termination_agent_wall_collision: bool,
+        init_reward_each_step: float,
+        max_timesteps: int
+        ) -> None:
+
+        self.init_reward_each_step = init_reward_each_step
+        self.is_new_exiting_reward = is_new_exiting_reward
+        self.is_new_followers_reward = is_new_followers_reward
+        self.is_termination_agent_wall_collision = is_termination_agent_wall_collision
+        self.max_timesteps = max_timesteps
+Reason:
+The paper reward uses tau = 1 - t / max_timesteps, so Reward needs the configured episode horizon.
+
+Old:
+VISCEK or FOLLOWER --> EXITING  :  (15 +  5 * time_factor)
+VISCEK             --> FOLLOWER :  (10 + 10 * time_factor)
+New:
+VISCEK or FOLLOWER --> EXITING  :  (15 + 10 * time_factor)
+VISCEK             --> FOLLOWER :  (10 +  5 * time_factor)
+Reason:
+Correct stale reward documentation to match the code and the baseline exiting reward.
+
+Old:
+time_factor = 1 - timesteps / (200 * num_pedestrians)
+New:
+time_factor = 1 - timesteps / self.max_timesteps
+Reason:
+Implement tau = 1 - t / max_timesteps from the paper.
+
+Old:
+reward = Reward(
+    is_new_exiting_reward=is_new_exiting_reward,
+    is_new_followers_reward=is_new_followers_reward,
+    is_termination_agent_wall_collision=is_termination_agent_wall_collision,
+    init_reward_each_step=init_reward_each_step)
+New:
+reward = Reward(
+    is_new_exiting_reward=is_new_exiting_reward,
+    is_new_followers_reward=is_new_followers_reward,
+    is_termination_agent_wall_collision=is_termination_agent_wall_collision,
+    init_reward_each_step=init_reward_each_step,
+    max_timesteps=max_timesteps)
+Reason:
+Pass the configured episode horizon into Reward for tau.
+
+File: main.py
+
+Old:
+enabled_gravity_embedding=args.enabled_gravity_embedding,
+#enabled_gravity_and_speed_embedding=args.enabled_gravity_and_speed_embedding,
+alpha=args.alpha,
+New:
+enabled_gravity_embedding=args.enabled_gravity_embedding,
+enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
+alpha=args.alpha,
+Reason:
+Preserve the existing CLI override for speed/time-derivative embedding and keep the default disabled. This makes "no time derivative / speed embedding" explicit for the default baseline while still allowing the existing flag to work.
+
+Final command to run the baseline
+
+cd /mnt/c/Users/marco/Projects/Evacuationwalls
+python main.py
+
+The default command now uses:
+- PPO with MlpPolicy
+- number_of_pedestrians = 60
+- width = 1.0
+- height = 1.0
+- Vicsek radius = 0.1
+- leader radius = 0.2
+- noise_coef = 0.2
+- step_size = 0.01
+- max_timesteps = 2000
+- exit zone radius = 0.4
+- evacuation destination radius = 0.01
+- alpha = 3
+- reward per step = -1 + (15 + 10 * tau) * newly_exiting_pedestrians
+- tau = 1 - t / max_timesteps
+- no followers reward
+- no intrinsic reward
+- no internal walls
+- no time derivative / speed embedding
+- pseudo-gravitational encoding enabled
+- gamma = 0.99
+- learning_rate = 0.0005
+- device = cpu
+
+Remaining mismatches, if any
+
+No remaining mismatches against the paper baseline values listed in the task.
+
+Notes:
+- External boundary collision logic remains active; the task only requested no internal walls.
+- The existing --deactivate-walls CLI flag is preserved. Because the baseline now disables walls by default, this flag is redundant for the default run.
+- The existing --enabled-gravity-embedding-speed CLI flag remains available to enable time-derivative observations, but it is disabled by default.
+
+Git diff summary
+
+main.py                         |  2 +-
+src/env/constants.py            | 20 ++++++++++----------
+src/env/env.py                  | 13 ++++++++-----
+src/params.py                   |  2 +-
+src/utils.py                    |  3 ++-
+CHANGES_CINEMERE_BASELINE.txt   | new file

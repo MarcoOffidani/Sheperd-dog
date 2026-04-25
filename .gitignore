@@ -17,4 +17,8 @@ wandb/
 # Local outputs / artifacts
 escaped_counts.csv
 analysis.txt
-analyssis_expanded.txt
+analyssis_expanded.txt.vscode/
+__pycache__/
+.codex
+requirements.lock.txt
+.vscode/

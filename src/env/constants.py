@@ -2,9 +2,9 @@
 # Note: params with (!) in comment are only default params, which
 # can be changed with argparse module in main.py
 
-NUM_PEDESTRIANS = 200                     # ! number of pedestrians
+NUM_PEDESTRIANS = 60                      # ! number of pedestrians
 EPS = 1e-8 
-ENSLAVING_DEGREE = 0.8                      # ! leader's enslaving degree
+ENSLAVING_DEGREE = 1.0                    # ! leader's enslaving degree
 
 # Area params
 WIDTH = 1.                                  # ! geometry of environment space: width
@@ -18,10 +18,10 @@ USE_RELATIVE_POSITIONS = False              # ! add relative positions wrapper (
 
 # Reward params
 TERMINATION_AGENT_WALL_COLLISION = False    # ! is or no termination for agent's wall collision
-INTRINSIC_REWARD_COEF = 1.                  # ! coef of intrinsic reward
+INTRINSIC_REWARD_COEF = 0.                  # ! coef of intrinsic reward
 IS_NEW_EXITING_REWARD = True                # ! if enable reward for new exiting
-IS_NEW_FOLLOWERS_REWARD = True              # ! if enable reward for new followers
-INIT_REWARD_EACH_STEP = 0.                  # ! each step give this reward
+IS_NEW_FOLLOWERS_REWARD = False             # ! if enable reward for new followers
+INIT_REWARD_EACH_STEP = -1.                 # ! each step give this reward
 
 # Time params
 MAX_TIMESTEPS = int(2e3)                    # ! max timesteps before truncation
@@ -31,11 +31,11 @@ N_TIMESTEPS = 0                             # ! number of timesteps already done
 # Gravity embedding params
 ENABLED_GRAVITY_EMBEDDING = True            # ! if True use gravity embedding
 ENABLED_GRAVITY_AND_SPEED_EMBEDDING = False 
-ALPHA = 5 #2                                   # ! parameter of gradient state
+ALPHA = 3                                   # ! parameter of gradient state
 
-SWITCH_DISTANCE_TO_LEADER = 0.1             # radius of catch by leader
-SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.05   # SWITCH_DISTANCE_TO_LEADER
-SWITCH_DISTANCE_TO_EXIT   = 0.2
+SWITCH_DISTANCE_TO_LEADER = 0.2             # radius of catch by leader
+SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN = 0.1   # SWITCH_DISTANCE_TO_LEADER
+SWITCH_DISTANCE_TO_EXIT   = 0.4
 SWITCH_DISTANCE_TO_ESCAPE = 0.01
 
 SAVE_PATH_GIFF = 'saved_data/giff'
@@ -51,4 +51,4 @@ VERTICAL_WALL_POSITION = 0.0  # Horizontal position of the vertical wall
 VERTICAL_WALL_HALF_WIDTH = 0.5  # Half-width of the vertical wall opening, put 0.5 in order to remove the wall
 
 # Global feature flag: disable internal walls while keeping boundary collisions active
-DEACTIVATE_WALLS = False
+DEACTIVATE_WALLS = True
