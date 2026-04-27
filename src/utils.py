@@ -31,6 +31,8 @@ def parse_args(inline_mode=False, request=""):
         help='number of timesteps between Stable-Baselines3 checkpoints')
     model_params.add_argument('--load-model-path', type=str, default=None,
         help='path to a Stable-Baselines3 model zip to resume from')
+    model_params.add_argument('--eval-only', action='store_true', default=False,
+        help='run a loaded Stable-Baselines3 model without further training')
     model_params.add_argument('--learning-rate', type=float, default=0.0005,
         help='learning rate for stable baselines ppo model')
     model_params.add_argument('--gamma', type=float, default=0.99,
@@ -105,6 +107,9 @@ def parse_args(inline_mode=False, request=""):
         args = parser.parse_args(request)
     else:
         args = parser.parse_args()
+
+    if args.eval_only and not args.load_model_path:
+        parser.error('--eval-only requires --load-model-path')
         
     if args.enabled_gravity_embedding:
         assert not args.use_relative_positions, \

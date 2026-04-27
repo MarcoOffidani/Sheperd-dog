@@ -1,0 +1,43 @@
+Evaluation-only mode for trained SB3 models
+===========================================
+
+New flag
+--------
+Added --eval-only. It is a boolean CLI flag, defaults to False, and runs a
+loaded Stable-Baselines3 model without further training.
+
+How to run
+----------
+Example:
+
+python main.py --eval-only --load-model-path saved_data/models/model.zip --n-episodes 10
+
+When --eval-only is set, --load-model-path is required. The existing
+--n-episodes argument controls how many complete episodes are run. Eval-only
+starts its environment episode counter from 0, so output episode indexes for
+the evaluation run begin at 1.
+
+How eval-only differs from training
+-----------------------------------
+Eval-only loads the model from --load-model-path and calls:
+
+action, _ = model.predict(obs, deterministic=True)
+
+It does not call model.learn(), does not create training checkpoints, and does
+not save a new trained model at the end. The environment still uses the normal
+reset/step termination and truncation behavior, so existing CSV, GIF, and log
+side effects remain active. The environment is closed at the end so buffered
+CSV rows are flushed.
+
+Files changed
+-------------
+main.py
+src/utils.py
+CHANGES_EVAL_ONLY.txt
+
+Limitations
+-----------
+The loaded model must be compatible with the observation/action space produced
+by the CLI environment options used for evaluation. Evaluation uses the current
+environment configuration; it does not infer or restore environment settings
+from the saved SB3 model.

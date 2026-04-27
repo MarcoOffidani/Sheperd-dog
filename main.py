@@ -92,7 +92,7 @@ def setup_env(args, experiment_name):
         is_new_followers_reward=args.is_new_followers_reward,
         intrinsic_reward_coef=args.intrinsic_reward_coef,
         max_timesteps=args.max_timesteps,
-        n_episodes=args.n_episodes,
+        n_episodes=0 if args.eval_only else args.n_episodes,
         n_timesteps=args.n_timesteps,
         enabled_gravity_embedding=args.enabled_gravity_embedding,
         enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
@@ -161,6 +161,15 @@ def setup_wandb(args, experiment_name):
         config=save_config
     )
 
+def evaluate_model(model, env, n_episodes):
+    for _ in range(n_episodes):
+        obs, _ = env.reset()
+        terminated = False
+        truncated = False
+        while not (terminated or truncated):
+            action, _ = model.predict(obs, deterministic=True)
+            obs, _, terminated, truncated, _ = env.step(action)
+
 if __name__ == "__main__":
     #print("first line")
     args = parse_args()
@@ -173,6 +182,13 @@ if __name__ == "__main__":
     model = setup_model(args, env)
     #model.load('11may.zip') #remove .for training
     #model.learning_rate = 0.0
+    if args.eval_only:
+        try:
+            evaluate_model(model, env, args.n_episodes)
+        finally:
+            env.close()
+        raise SystemExit(0)
+
     checkpoint_dir = os.path.join(params.SAVE_PATH_MODELS, "checkpoints")
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint_callback = CheckpointCallback(
