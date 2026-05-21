@@ -39,6 +39,8 @@ def parse_args(inline_mode=False, request=""):
         help='gammma for stable baselines ppo model')
     model_params.add_argument('--device', type=str, default=DEVICE,
         choices=['cpu', 'cuda'], help='device for the model')
+    model_params.add_argument('--seed', type=int, default=None,
+        help='deterministic seed for Python, NumPy, PyTorch, Stable-Baselines3, and the env')
 
     experiment_params = parser.add_argument_group('experiment')
     experiment_params.add_argument('--exp-name', type=str, default='test',
@@ -47,6 +49,14 @@ def parse_args(inline_mode=False, request=""):
         help='debug mode of logging')
     experiment_params.add_argument('--draw', action='store_true',
         help='save animation at each step')
+    experiment_params.add_argument('--variant-name', type=str, default=None,
+        help='explicit variant label to include in experiment names')
+    experiment_params.add_argument('--output-dir', type=str, default=None,
+        help='per-run output directory for runs.csv, escaped_counts.csv, models, TensorBoard, png, and gif')
+    experiment_params.add_argument('--checkpoint-dir', type=str, default=None,
+        help='per-run checkpoint directory')
+    experiment_params.add_argument('--log-dir', type=str, default=None,
+        help='per-run normal log directory')
 
     env_params = parser.add_argument_group('env')
     env_params.add_argument('-n', '--number-of-pedestrians', type=int, default=constants.NUM_PEDESTRIANS,
@@ -63,9 +73,16 @@ def parse_args(inline_mode=False, request=""):
         help="number of times to stack observation")
     env_params.add_argument('-rel', '--use-relative-positions', type=str2bool, default=constants.USE_RELATIVE_POSITIONS,
         help="add relative positions wrapper (can be use only WITHOUT gravity embedding)")
-    env_params.add_argument('--deactivate-walls', action='store_true',
-        default=constants.DEACTIVATE_WALLS,
+    wall_group = env_params.add_mutually_exclusive_group()
+    walls_action = wall_group.add_argument('--walls', dest='deactivate_walls', action='store_false',
+        default=argparse.SUPPRESS,
+        help="enable internal walls logic/drawing/interactions")
+    no_walls_action = wall_group.add_argument('--no-walls', '--deactivate-walls', dest='deactivate_walls', action='store_true',
+        default=argparse.SUPPRESS,
         help="disable internal walls logic/drawing/interactions (external boundaries remain active)")
+    parser.set_defaults(deactivate_walls=constants.DEACTIVATE_WALLS)
+    walls_action.default = argparse.SUPPRESS
+    no_walls_action.default = argparse.SUPPRESS
     
     leader_params = parser.add_argument_group('leader params')
     leader_params.add_argument('--enslaving-degree', type=float, default=constants.ENSLAVING_DEGREE,
@@ -97,9 +114,18 @@ def parse_args(inline_mode=False, request=""):
     gravity_embedding_params.add_argument('-e', '--enabled-gravity-embedding', type=str2bool,
         default=constants.ENABLED_GRAVITY_EMBEDDING,
         help='if True use gravity embedding')
-    gravity_embedding_params.add_argument('-speed', '--enabled-gravity-embedding-speed', type=str2bool,
-        default=constants.ENABLED_GRAVITY_AND_SPEED_EMBEDDING,
+    speed_group = gravity_embedding_params.add_mutually_exclusive_group()
+    speed_group.add_argument('--enabled-gravity-embedding-speed', type=str2bool,
+        dest='enabled_gravity_embedding_speed',
         help='if True use speed gravity embedding')
+    speed_group.add_argument('--speed', '-speed',
+        dest='enabled_gravity_embedding_speed', action='store_true',
+        default=argparse.SUPPRESS,
+        help='use speed gravity embedding')
+    speed_group.add_argument('--no-speed', dest='enabled_gravity_embedding_speed', action='store_false',
+        default=argparse.SUPPRESS,
+        help='disable speed gravity embedding')
+    parser.set_defaults(enabled_gravity_embedding_speed=constants.ENABLED_GRAVITY_AND_SPEED_EMBEDDING)
     gravity_embedding_params.add_argument('--alpha', type=float, default=constants.ALPHA,
         help='alpha parameter of gravity gradient embedding')
 
@@ -122,10 +148,16 @@ def parse_args(inline_mode=False, request=""):
 
 def get_experiment_name(args):
     prefix = args.exp_name
+    if args.variant_name:
+        prefix = f"{prefix}_{args.variant_name}"
+    seed_part = f"seed-{args.seed}" if args.seed is not None else "seed-none"
     params = [
+        seed_part,
         f"n-{args.number_of_pedestrians}",
         f"lr-{args.learning_rate}",
         f"gamma-{args.gamma}",
+        f"walls-{'off' if args.deactivate_walls else 'on'}",
+        f"speed-{'on' if args.enabled_gravity_embedding_speed else 'off'}",
         f"s-{f'gra_a-{args.alpha}' if args.enabled_gravity_embedding else 'rel' if args.use_relative_positions else 'ped'}",
         f"ss-{args.step_size}",
         f"vr-{constants.SWITCH_DISTANCE_TO_OTHER_PEDESTRIAN}"

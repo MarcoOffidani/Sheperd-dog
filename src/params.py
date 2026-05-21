@@ -22,10 +22,12 @@ LOGGER_BUFFER_MAXLEN = 100
 from datetime import datetime
 NOW = datetime.now().strftime(f"%d-%b-%H-%M-%S")
 
+SAVE_PATH_OUTPUT = 'saved_data'
 SAVE_PATH_TBLOGS = 'saved_data/tb-logs'
 SAVE_PATH_MODELS = 'saved_data/models'
-CHECKPOINT_FREQUENCY_TIMESTEPS = 10_000
+SAVE_PATH_CHECKPOINTS = 'saved_data/models/checkpoints'
+CHECKPOINT_FREQUENCY_TIMESTEPS = 100_000
 
 DEVICE = "cpu"
 
-WALK_DIAGRAM_LOGGING_FREQUENCY = 4   # frequency in episodes  (overall_timesteps: 2_000_000)
+WALK_DIAGRAM_LOGGING_FREQUENCY = 500   # frequency in episodes  (overall_timesteps: 2_000_000)

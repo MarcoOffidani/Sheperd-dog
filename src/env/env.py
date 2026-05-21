@@ -6,6 +6,7 @@ import numpy as np
 import gymnasium as gym
 #print("envgym")
 from gymnasium import spaces
+from gymnasium.utils import seeding
 import logging; log = logging.getLogger(__name__)
 #print("log")
 import pandas as pd
@@ -23,6 +24,7 @@ from functools import reduce
 from enum import Enum, auto
 #print("env3")
 from src.env import constants
+from src import params
 from src.params import WALK_DIAGRAM_LOGGING_FREQUENCY
 
 from typing import Tuple, List, Dict
@@ -40,7 +42,8 @@ def setup_logging(verbose: bool, experiment_name: str) -> None:
     logging.basicConfig(
         filename=logs_filename, filemode="w",
         format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        level=logging.DEBUG if verbose else logging.INFO
+        level=logging.DEBUG if verbose else logging.INFO,
+        force=True
     )
 
 
@@ -361,11 +364,15 @@ class Pedestrians:
 
     def __init__(self, num : int):
         self.num = num
+        self.rng = np.random.default_rng()
+
+    def set_rng(self, rng):
+        self.rng = rng
 
     def reset(self, agent_position, exit_position):
-        self.positions  = np.random.uniform(-1.0, 1.0, size=(self.num, 2))
+        self.positions  = self.rng.uniform(-1.0, 1.0, size=(self.num, 2))
         #self.positions  = np.random.uniform(0.3, 0.4, size=(self.num, 2))
-        self.directions = np.random.uniform(-1.0, 1.0, size=(self.num, 2))
+        self.directions = self.rng.uniform(-1.0, 1.0, size=(self.num, 2))
         #self.directions = np.random.uniform(-1e-8, 1e-8, size=(self.num, 2))
         self.normirate_directions()
         self.statuses = np.array([Status.VISCEK for _ in range(self.num)])
@@ -404,7 +411,8 @@ class Agent:
     
     def __init__(self, observation_space, enslaving_degree):
         #self.start_position = np.array([0, 0.01])
-        self.start_position = np.random.uniform(-1, 1, size=(2,))
+        self.rng = np.random.default_rng()
+        self.start_position = self.rng.uniform(-1, 1, size=(2,))
         self.start_direction = np.zeros(2, dtype=np.float32)
         self.enslaving_degree = enslaving_degree
         self.observation_space = observation_space
@@ -413,9 +421,13 @@ class Agent:
         self.start_observation = {key: np.zeros(2, dtype=np.float32) for key in keys}
         #self.start_observation_grad_ped = np.zeros(2, dtype=np.float32)
         #self.start_observation_grad_exi = np.zeros(2, dtype=np.float32)
+
+    def set_rng(self, rng):
+        self.rng = rng
+
     def reset(self):
         #self.position = self.start_position.copy()
-        self.position = np.random.uniform(-1, 1, size=(2,))
+        self.position = self.rng.uniform(-1, 1, size=(2,))
         
         #self.observation_grad_ped = self.start_observation_grad_ped.copy()
         #self.observation_grad_exi = self.start_observation_grad_exi.copy()
@@ -1291,6 +1303,10 @@ class Area:
         self.step_size = step_size
         self.noise_coef = noise_coef
         self.exit = Exit()
+        self.rng = np.random.default_rng()
+
+    def set_rng(self, rng):
+        self.rng = rng
     
     def reset(self):
         pass
@@ -1372,7 +1388,7 @@ class Area:
             fv_theta = np.arctan2(fv_directions_y, fv_directions_x)
                                     
             # Create randomization noise to obtained directions
-            noise = np.random.uniform(low=-constants.NOISE_COEF/2, high=constants.NOISE_COEF/2, size=len(n_intersections))
+            noise = self.rng.uniform(low=-self.noise_coef/2, high=self.noise_coef/2, size=len(n_intersections))
             # noise = np.random.normal(loc=0., scale=constants.NOISE_COEF, size=len(n_intersections))
             
             # New direction = estimated_direction + noise
@@ -1547,7 +1563,7 @@ class Area:
         fv_theta = np.arctan2(fv_directions_y, fv_directions_x)
                                 
         # Create randomization noise to obtained directions
-        noise = np.random.uniform(low=-constants.NOISE_COEF/2, high=constants.NOISE_COEF/2, size=len(n_intersections))
+        noise = self.rng.uniform(low=-self.noise_coef/2, high=self.noise_coef/2, size=len(n_intersections))
         # noise = np.random.normal(loc=0., scale=constants.NOISE_COEF, size=len(n_intersections))
         
         # New direction = estimated_direction + noise
@@ -1816,6 +1832,7 @@ class EvacuationEnv(gym.Env):
         # logging params
         learning_rate=None,
         gamma=None,
+        seed=None,
         run_metadata=None,
         verbose=False,
         render_mode=None,
@@ -1823,6 +1840,8 @@ class EvacuationEnv(gym.Env):
         
         ) -> None:
         super(EvacuationEnv, self).__init__()
+        self._seed = seed
+        self.np_random, self._np_random_seed = seeding.np_random(seed)
         #print("initenv")
         # setup env
         self.pedestrians = Pedestrians(num=number_of_pedestrians)
@@ -1838,6 +1857,8 @@ class EvacuationEnv(gym.Env):
             reward=reward, 
             width=width, height=height, 
             step_size=step_size, noise_coef=noise_coef)
+        self.pedestrians.set_rng(self.np_random)
+        self.area.set_rng(self.np_random)
         
         self.time = Time(
             max_timesteps=max_timesteps, 
@@ -1848,6 +1869,7 @@ class EvacuationEnv(gym.Env):
         self.enabled_gravity_and_speed_embedding = enabled_gravity_and_speed_embedding
         self.observation_space = self._get_observation_space()
         self.agent = Agent(self.observation_space, enslaving_degree=enslaving_degree )        
+        self.agent.set_rng(self.np_random)
         
         self.intrinsic_reward_coef = intrinsic_reward_coef
         self.episode_reward = 0
@@ -1857,6 +1879,9 @@ class EvacuationEnv(gym.Env):
         self.alpha = alpha
 
         self.action_space = spaces.Box(low=-1., high=1., shape=(2,), dtype=np.float32)
+        if seed is not None:
+            self.action_space.seed(seed)
+            self.observation_space.seed(seed)
         #self.observation_space = self._get_observation_space()
         #self.agent = Agent(self.observation_space, enslaving_degree=enslaving_degree )
         # logging
@@ -1876,6 +1901,7 @@ class EvacuationEnv(gym.Env):
             "learning_rate": learning_rate,
             "gamma": gamma,
             "device": None,
+            "seed": seed,
             "number_of_pedestrians": number_of_pedestrians,
             "width": width,
             "height": height,
@@ -1953,7 +1979,8 @@ class EvacuationEnv(gym.Env):
             [[row.get(column) for column in columns]],
             columns=columns
         )
-        with open('runs.csv', 'a') as f:
+        os.makedirs(params.SAVE_PATH_OUTPUT, exist_ok=True)
+        with open(os.path.join(params.SAVE_PATH_OUTPUT, 'runs.csv'), 'a') as f:
             df.to_csv(f, header=f.tell()==0, index=False)
         
     def _get_observation_space(self):        
@@ -2028,6 +2055,8 @@ class EvacuationEnv(gym.Env):
         return observation
 
     def reset(self, seed=None, options=None):
+        if seed is not None:
+            self.seed(seed)
         if self.save_next_episode_anim or (self.time.n_episodes + 1) % WALK_DIAGRAM_LOGGING_FREQUENCY == 0:
             self.draw = True
             self.save_next_episode_anim = True
@@ -2258,10 +2287,11 @@ class EvacuationEnv(gym.Env):
                 'padded'
             ]
         )
-        with open('escaped_counts.csv', 'a') as f:
+        os.makedirs(params.SAVE_PATH_OUTPUT, exist_ok=True)
+        with open(os.path.join(params.SAVE_PATH_OUTPUT, 'escaped_counts.csv'), 'a') as f:
             df.to_csv(f, header=f.tell()==0, index=False)
         self.escaped_counts_buffer.clear()
-        print("Data appended to 'escaped_counts.csv'")
+        print(f"Data appended to '{os.path.join(params.SAVE_PATH_OUTPUT, 'escaped_counts.csv')}'")
 
     def save_animation(self):
         #my_obs = self._get_observation()
@@ -2572,8 +2602,16 @@ class EvacuationEnv(gym.Env):
         self.flush_escaped_counts()
     
     def seed(self, seed=None):
-        from gym.utils.seeding import np_random
-        return np_random(seed)
+        self._seed = seed
+        self.np_random, self._np_random_seed = seeding.np_random(seed)
+        self.pedestrians.set_rng(self.np_random)
+        self.agent.set_rng(self.np_random)
+        self.area.set_rng(self.np_random)
+        if hasattr(self, "action_space"):
+            self.action_space.seed(seed)
+        if hasattr(self, "observation_space"):
+            self.observation_space.seed(seed)
+        return [self._np_random_seed]
 # # %%
 # e = EvacuationEnv(number_of_pedestrians=100)
 

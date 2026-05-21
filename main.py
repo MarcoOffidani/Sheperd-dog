@@ -1,11 +1,13 @@
 import os
 import csv
 import re
+import random
 import numpy as np
 from gymnasium.wrappers import FrameStack, FlattenObservation
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
-import wandb
+from stable_baselines3.common.utils import set_random_seed
+from src.optional_wandb import wandb
 #print("something")
 from src.env import EvacuationEnv, RelativePosition, constants
 #print("something2")
@@ -25,13 +27,14 @@ def infer_parent_run_id(load_model_path):
     if match:
         return match.group(0)
 
-    if not os.path.exists('runs.csv'):
+    runs_csv = os.path.join(params.SAVE_PATH_OUTPUT, 'runs.csv')
+    if not os.path.exists(runs_csv):
         return None
 
     parent_run_id = None
     best_match_length = 0
     normalized_model_path = load_model_path.replace('\\', '/').replace(os.sep, '/')
-    with open('runs.csv', newline='') as f:
+    with open(runs_csv, newline='') as f:
         for row in csv.DictReader(f):
             run_id = row.get('run_id')
             experiment_name = row.get('experiment_name')
@@ -53,6 +56,7 @@ def build_run_metadata(args, experiment_name):
         "learning_rate": args.learning_rate,
         "gamma": args.gamma,
         "device": args.device,
+        "seed": args.seed,
         "number_of_pedestrians": args.number_of_pedestrians,
         "width": args.width,
         "height": args.height,
@@ -78,6 +82,46 @@ def build_run_metadata(args, experiment_name):
     }
 
 
+def seed_everything(seed, using_cuda=False):
+    if seed is None:
+        return
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    set_random_seed(seed, using_cuda=using_cuda)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    except ImportError:
+        pass
+
+
+def configure_output_paths(args, experiment_name):
+    output_dir = args.output_dir or os.path.join("saved_data", "runs", experiment_name)
+    params.SAVE_PATH_OUTPUT = output_dir
+    params.SAVE_PATH_MODELS = os.path.join(output_dir, "models")
+    params.SAVE_PATH_TBLOGS = os.path.join(output_dir, "tb-logs")
+    params.SAVE_PATH_CHECKPOINTS = args.checkpoint_dir or os.path.join(output_dir, "checkpoints")
+    constants.SAVE_PATH_LOGS = args.log_dir or os.path.join(output_dir, "logs")
+    constants.SAVE_PATH_PNG = os.path.join(output_dir, "png")
+    constants.SAVE_PATH_GIFF = os.path.join(output_dir, "giff")
+    for path in (
+        params.SAVE_PATH_OUTPUT,
+        params.SAVE_PATH_MODELS,
+        params.SAVE_PATH_TBLOGS,
+        params.SAVE_PATH_CHECKPOINTS,
+        constants.SAVE_PATH_LOGS,
+        constants.SAVE_PATH_PNG,
+        constants.SAVE_PATH_GIFF,
+    ):
+        os.makedirs(path, exist_ok=True)
+    return output_dir
+
+
 def setup_env(args, experiment_name):
     env = EvacuationEnv(
         experiment_name=experiment_name,
@@ -97,6 +141,7 @@ def setup_env(args, experiment_name):
         enabled_gravity_embedding=args.enabled_gravity_embedding,
         enabled_gravity_and_speed_embedding=args.enabled_gravity_embedding_speed,
         alpha=args.alpha,
+        seed=args.seed,
         run_metadata=build_run_metadata(args, experiment_name),
         verbose=args.verbose,
         render_mode=None,
@@ -130,7 +175,8 @@ def setup_model(args, env):
             tensorboard_log=params.SAVE_PATH_TBLOGS,
             device=args.device,
             learning_rate=args.learning_rate,
-            gamma=args.gamma
+            gamma=args.gamma,
+            seed=args.seed
         )
     elif args.origin == 'sac':
         model = PPO(
@@ -139,7 +185,8 @@ def setup_model(args, env):
             tensorboard_log=params.SAVE_PATH_TBLOGS,
             device=args.device,
             learning_rate=args.learning_rate,
-            gamma=args.gamma
+            gamma=args.gamma,
+            seed=args.seed
         )
     else:
         raise NotImplementedError
@@ -175,6 +222,8 @@ if __name__ == "__main__":
     args = parse_args()
 
     experiment_name = get_experiment_name(args)
+    configure_output_paths(args, experiment_name)
+    seed_everything(args.seed, using_cuda=args.device == "cuda")
 
     #setup_wandb(args, experiment_name)
     env = setup_env(args, experiment_name)
@@ -189,7 +238,7 @@ if __name__ == "__main__":
             env.close()
         raise SystemExit(0)
 
-    checkpoint_dir = os.path.join(params.SAVE_PATH_MODELS, "checkpoints")
+    checkpoint_dir = params.SAVE_PATH_CHECKPOINTS
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint_callback = CheckpointCallback(
         save_freq=args.checkpoint_frequency_timesteps,
